@@ -1,0 +1,38 @@
+{
+  "start_state": "S0",
+  "final_states": [
+    "ID", "NUM", "OP", "ASSIGN", "COLON", "REL", "STRING",
+    "SEMICOLON", "COMMA", "DOT", "LPAREN", "RPAREN"
+  ],
+  "transitions": {
+    "S0": {
+      "<LETTER>": "ID",
+      "<DIGIT>": "NUM",
+      "+": "OP",
+      "-": "OP",
+      "*": "OP",
+      "/": "OP",
+      ":": "COLON",
+      "=": "REL",
+      ";": "SEMICOLON",
+      ",": "COMMA",
+      ".": "DOT",
+      "(": "LPAREN",
+      ")": "RPAREN",
+      "'": "STRING"
+    },
+    "ID": {
+      "<LETTER>": "ID",
+      "<DIGIT>": "ID"
+    },
+    "NUM": {
+      "<DIGIT>": "NUM"
+    },
+    "COLON": {
+      "=": "ASSIGN"
+    },
+    "STRING": {
+      "'": "S0"
+    }
+  }
+}
