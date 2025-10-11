@@ -1,24 +1,23 @@
 {
   "start_state": "S0",
   "final_states": [
-    "ID", "NUM", "OP", "ASSIGN", "COLON", "REL", "STRING",
-    "SEMICOLON", "COMMA", "DOT", "LPAREN", "RPAREN"
+    "ID", "NUM", "ARITHMETIC_OPERATOR", "ASSIGN", "COLON", "STRING",
+    "SEMICOLON", "COMMA", "DOT", "LPARENTHESIS", "RPARENTHESIS"
   ],
   "transitions": {
     "S0": {
       "<LETTER>": "ID",
       "<DIGIT>": "NUM",
-      "+": "OP",
-      "-": "OP",
-      "*": "OP",
-      "/": "OP",
+      "+": "ARITHMETIC_OPERATOR",
+      "-": "ARITHMETIC_OPERATOR",
+      "*": "ARITHMETIC_OPERATOR",
+      "/": "ARITHMETIC_OPERATOR",
       ":": "COLON",
-      "=": "REL",
       ";": "SEMICOLON",
       ",": "COMMA",
       ".": "DOT",
-      "(": "LPAREN",
-      ")": "RPAREN",
+      "(": "LPARENTHESIS",
+      ")": "RPARENTHESIS",
       "'": "STRING"
     },
     "ID": {
