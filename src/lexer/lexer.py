@@ -36,17 +36,52 @@ class Lexer:
                     self.dfa.reset()
                 i += 1
                 continue
+            
+            if char == "{":
+                tokens.append(Token("COMMENT_START", "{", line, col))
+                i += 1
+                while i < len(text) and text[i] != "}":
+                    if text[i] == "\n":
+                        line += 1
+                        col = 0
+                    i += 1
+                tokens.append(Token("COMMENT_END", "}", line, col))
+                i += 1
+                continue
+            
+            if char == "(" and (i + 1) < len(text) and text[i + 1] == "*":
+                tokens.append(Token("COMMENT_START", "(*", line, col))
+                i += 2
+                while i < len(text) - 1:
+                    if text[i] == "*" and text[i + 1] == ")":
+                        tokens.append(Token("COMMENT_END", "*)", line, col))
+                        i += 2
+                        break
+                    if text[i] == "\n":
+                        line += 1
+                        col = 0
+                    i += 1
+                continue
 
             # handle literal string
             if char == "'":
-                string_val = "'"
+                literal_val = "'"
                 i += 1
+                inner = ""
                 while i < len(text):
-                    string_val += text[i]
+                    literal_val += text[i]
                     if text[i] == "'":
                         break
+                    inner += text[i]
                     i += 1
-                tokens.append(Token("STRING_LITERAL", string_val, line, col))
+                literal_val += "'"
+
+                if len(inner) == 1:
+                    token_type = "CHAR_LITERAL"
+                else:
+                    token_type = "STRING_LITERAL"
+
+                tokens.append(Token(token_type, inner, line, col))
                 current = ""
                 self.dfa.reset()
                 i += 1
@@ -62,6 +97,13 @@ class Lexer:
                     # operasi :=
                     if current == ":" and char == "=":
                         tokens.append(Token("ASSIGN_OPERATOR", ":=", line, col))
+                        current = ""
+                        self.dfa.reset()
+                        i += 1
+                        continue
+                    # operasi range
+                    if current == '.' and char == '.':
+                        tokens.append(Token("RANGE_OPERATOR", "..", line, col))
                         current = ""
                         self.dfa.reset()
                         i += 1
@@ -103,6 +145,10 @@ class Lexer:
             token_type = "LPARENTHESIS"
         elif value == ")":
             token_type = "RPARENTHESIS"
+        elif value == "[":
+            token_type = "LBRACKET"
+        elif value == "]":
+            token_type = "RBRACKET"
         elif value == ":":
             token_type = "COLON"
         elif value == ":=":

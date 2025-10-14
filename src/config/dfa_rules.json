@@ -1,37 +1,48 @@
 {
-  "start_state": "S0",
-  "final_states": [
-    "ID", "NUM", "ARITHMETIC_OPERATOR", "ASSIGN", "COLON", "STRING",
-    "SEMICOLON", "COMMA", "DOT", "LPARENTHESIS", "RPARENTHESIS"
-  ],
-  "transitions": {
-    "S0": {
-      "<LETTER>": "ID",
-      "<DIGIT>": "NUM",
-      "+": "ARITHMETIC_OPERATOR",
-      "-": "ARITHMETIC_OPERATOR",
-      "*": "ARITHMETIC_OPERATOR",
-      "/": "ARITHMETIC_OPERATOR",
-      ":": "COLON",
-      ";": "SEMICOLON",
-      ",": "COMMA",
-      ".": "DOT",
-      "(": "LPARENTHESIS",
-      ")": "RPARENTHESIS",
-      "'": "STRING"
-    },
-    "ID": {
-      "<LETTER>": "ID",
-      "<DIGIT>": "ID"
-    },
-    "NUM": {
-      "<DIGIT>": "NUM"
-    },
-    "COLON": {
-      "=": "ASSIGN"
-    },
-    "STRING": {
-      "'": "S0"
-    }
-  }
+	"start_state": "S0",
+	"final_states": [
+		"ID",
+		"NUM",
+		"ARITHMETIC_OPERATOR",
+		"ASSIGN",
+		"COLON",
+		"STRING",
+		"SEMICOLON",
+		"COMMA",
+		"DOT",
+		"LPARENTHESIS",
+		"RPARENTHESIS"
+	],
+	"transitions": {
+		"S0": {
+			"<LETTER>": "ID",
+			"<DIGIT>": "NUM",
+			"+": "ARITHMETIC_OPERATOR",
+			"-": "ARITHMETIC_OPERATOR",
+			"*": "ARITHMETIC_OPERATOR",
+			"/": "ARITHMETIC_OPERATOR",
+			":": "COLON",
+			";": "SEMICOLON",
+			",": "COMMA",
+			".": "DOT",
+			"(": "LPARENTHESIS",
+			")": "RPARENTHESIS",
+			"[": "LBRACKET",
+			"]": "RBRACKET",
+			"'": "STRING"
+		},
+		"ID": {
+			"<LETTER>": "ID",
+			"<DIGIT>": "ID"
+		},
+		"NUM": {
+			"<DIGIT>": "NUM"
+		},
+		"COLON": {
+			"=": "ASSIGN"
+		},
+		"STRING": {
+			"'": "S0"
+		}
+	}
 }
