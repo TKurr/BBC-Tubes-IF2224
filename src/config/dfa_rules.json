@@ -11,7 +11,9 @@
 		"COMMA",
 		"DOT",
 		"LPARENTHESIS",
-		"RPARENTHESIS"
+		"RPARENTHESIS",
+		"LBRACKET",
+		"RBRACKET"
 	],
 	"transitions": {
 		"S0": {
