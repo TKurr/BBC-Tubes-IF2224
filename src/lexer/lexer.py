@@ -38,29 +38,32 @@ class Lexer:
                 continue
             
             if char == "{":
-                tokens.append(Token("COMMENT_START", "{", line, col))
                 i += 1
                 while i < len(text) and text[i] != "}":
                     if text[i] == "\n":
                         line += 1
                         col = 0
                     i += 1
-                tokens.append(Token("COMMENT_END", "}", line, col))
                 i += 1
                 continue
             
             if char == "(" and (i + 1) < len(text) and text[i + 1] == "*":
-                tokens.append(Token("COMMENT_START", "(*", line, col))
                 i += 2
                 while i < len(text) - 1:
                     if text[i] == "*" and text[i + 1] == ")":
-                        tokens.append(Token("COMMENT_END", "*)", line, col))
                         i += 2
                         break
                     if text[i] == "\n":
                         line += 1
                         col = 0
                     i += 1
+                continue
+
+            # flush token
+            if char == "'" and current:
+                tokens.append(self.create_token(current, line, col))
+                current = ""
+                self.dfa.reset()
                 continue
 
             # handle literal string
