@@ -38,13 +38,21 @@ class Lexer:
             else:
                 if current:
                     token = self.create_token(current, line, col)
-                    if token:  
+                    if token:
+                        if token.type == "UNKNOWN":
+                            tokens.append(token)
+                            print(f"[Error] Unknown token '{token.value}' at line {line}, col {col}")
+                            break
                         tokens.append(token)
                     current = ""
                     self.dfa.reset()
                 else:
                     token = self.create_token(char, line, col)
                     if token:
+                        if token.type == "UNKNOWN":
+                            tokens.append(token)
+                            print(f"[Error] Unknown token '{token.value}' at line {line}, col {col}")
+                            break
                         tokens.append(token)
                     self.dfa.reset()
                     i += 1
@@ -55,45 +63,54 @@ class Lexer:
         return tokens
 
     def create_token(self, value, line, col):
-        v = value.lower()
         if value.isspace():
             return None
+
+        state = getattr(self.dfa, "last_final_state", None)
+        token_type = None
+
+        if state in self.dfa.final_states:
+            token_type = state
+
+        STATE_TOKEN_MAP = {
+            "ID": "IDENTIFIER",
+            "NUM": "NUMBER",
+            "ASSIGN": "ASSIGN_OPERATOR",
+            "ARITHMETIC_OPERATOR": "ARITHMETIC_OPERATOR",
+            "STRING_LITERAL": "STRING_LITERAL",
+            "CHAR_LITERAL": "CHAR_LITERAL",
+            "SEMICOLON": "SEMICOLON",
+            "COMMA": "COMMA",
+            "DOT": "DOT",
+            "RANGE_OPERATOR": "RANGE_OPERATOR",
+            "COLON": "COLON",
+            "LPARENTHESIS": "LPARENTHESIS",
+            "RPARENTHESIS": "RPARENTHESIS",
+            "LBRACKET": "LBRACKET",
+            "RBRACKET": "RBRACKET",
+            "EQUAL": "RELATIONAL_OPERATOR",
+            "LESS_THAN": "RELATIONAL_OPERATOR",
+            "GREATER_THAN": "RELATIONAL_OPERATOR",
+            "LESS_EQUAL": "RELATIONAL_OPERATOR",
+            "GREATER_EQUAL": "RELATIONAL_OPERATOR",
+            "NOT_EQUAL": "RELATIONAL_OPERATOR"
+        }
+
+        if token_type in STATE_TOKEN_MAP:
+            token_type = STATE_TOKEN_MAP[token_type]
+
+        v = value.lower()
+
+        if v in OPERATORS:
+            token_type = OPERATORS[v]
+
         elif v in KEYWORDS:
             token_type = "KEYWORD"
-        elif v in OPERATORS:
-            token_type = OPERATORS[v]
-        elif value.replace(".", "", 1).isdigit():
-            token_type = "NUMBER"
-        elif value == ";":
-            token_type = "SEMICOLON"
-        elif value == ",":
-            token_type = "COMMA"
-        elif value == ".":
-            token_type = "DOT"
-        elif value == "..":
-            token_type = "RANGE_OPERATOR"
-        elif value == "(":
-            token_type = "LPARENTHESIS"
-        elif value == ")":
-            token_type = "RPARENTHESIS"
-        elif value == "[":
-            token_type = "LBRACKET"
-        elif value == "]":
-            token_type = "RBRACKET"
-        elif value == ":":
-            token_type = "COLON"
-        elif value == ":=":
-            token_type = "ASSIGN_OPERATOR"
-        elif value in {"+", "-", "*", "/"}:
-            token_type = "ARITHMETIC_OPERATOR"
-        elif value in {"=", "<>", "<", "<=", ">", ">="}:
-            token_type = "RELATIONAL_OPERATOR"
-        elif value.startswith("'") and value.endswith("'"):
-            inner = value[1:-1]
-            token_type = "CHAR_LITERAL" if len(inner) == 1 else "STRING_LITERAL"
-        elif value.isidentifier():
+
+        elif token_type is None and v.isidentifier():
             token_type = "IDENTIFIER"
-        else:
+
+        if token_type is None:
             token_type = "UNKNOWN"
 
         return Token(token_type, value, line, col)
