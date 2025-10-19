@@ -1,7 +1,7 @@
 program Hello2;
 var
   a, b, i: integer;
-  arr: array[1..5] of integer;
+  arr: array[1 .. 5] of integer;
 
 begin
   a := 5;

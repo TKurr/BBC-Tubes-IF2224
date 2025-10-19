@@ -37,13 +37,14 @@ class Lexer:
                 i += 1
             else:
                 if current:
-                    token = self.create_token(current, line, col)
-                    if token:
-                        if token.type == "UNKNOWN":
-                            tokens.append(token)
-                            print(f"[Error] Unknown token '{token.value}' at line {line}, col {col}")
-                            break
+                    if not self.dfa.is_accepting():
+                        tokens.append(Token("UNKNOWN", current, line, col))
+                        print(f"[Error] Invalid token '{current}' at line {line}, col {col}")
+                        break
+                    else:
+                        token = self.create_token(current, line, col)
                         tokens.append(token)
+
                     current = ""
                     self.dfa.reset()
                 else:
@@ -56,9 +57,6 @@ class Lexer:
                         tokens.append(token)
                     self.dfa.reset()
                     i += 1
-
-        if current:
-            tokens.append(self.create_token(current, line, col))
 
         return tokens
 

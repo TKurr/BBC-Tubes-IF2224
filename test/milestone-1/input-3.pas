@@ -1,7 +1,7 @@
 program RangesLoops;
 var
   i: integer;
-  a: array[0..3] of integer;
+  a: array[0 .. 3] of integer;
 begin
   a[0] := 1;
   for i := 0 to 3 do

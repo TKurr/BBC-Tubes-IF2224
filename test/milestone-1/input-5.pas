@@ -2,7 +2,7 @@ program DeclsProcFunc;
 const
   K = 10;
 type
-  Index = 1..5;
+  Index = 1 .. 5;
 var
   i: integer;
   r: real;
