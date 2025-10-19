@@ -1,10 +1,10 @@
 {
   "start_state": "S0",
   "final_states": [
-    "ID", "NUM", "ARITHMETIC_OPERATOR", "ASSIGN", "COLON",
+    "ID", "NUM", "NUM_REAL", "ARITHMETIC_OPERATOR", "ASSIGN", "COLON",
     "STRING_LITERAL", "CHAR_LITERAL", "SEMICOLON", "COMMA",
     "DOT", "RANGE_OPERATOR", "LPARENTHESIS", "RPARENTHESIS", "LBRACKET", "RBRACKET", 
-    "EQUAL", "LESS_THAN", "GREATER_THAN", "LESS_EQUAL", "GREATER_EQUAL", "NOT_EQUAL"
+    "LESS_THAN", "GREATER_THAN"
   ],
   "transitions": {
     "S0": {
@@ -23,7 +23,7 @@
       "[": "LBRACKET",
       "]": "RBRACKET",
       "'": "EMPTY",
-      "=": "EQUAL",
+      "=": "RELATIONAL_OPERATOR",
       "<": "LESS_THAN",
       ">": "GREATER_THAN"
     },
@@ -37,6 +37,9 @@
     },
     "NUM_DOT": {
       "<DIGIT>": "NUM"
+    },
+    "NUM_REAL": {
+      " ": "NUM_REAL"
     },
     "COLON": {
       "=": "ASSIGN"
@@ -57,11 +60,11 @@
       "'": "STRING_LITERAL"
     },
     "LESS_THAN": {
-      "=": "LESS_EQUAL",
-      ">": "NOT_EQUAL"
+      "=": "RELATIONAL_OPERATOR",
+      ">": "RELATIONAL_OPERATOR"
     },
     "GREATER_THAN": {
-      "=": "GREATER_EQUAL"
+      "=": "RELATIONAL_OPERATOR"
     }
   }
 }

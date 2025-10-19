@@ -1,4 +1,4 @@
-from lexer.token import Token, KEYWORDS, OPERATORS
+from lexer.token import Token, KEYWORDS, OPERATORS, STATE_TOKEN_MAP
 from lexer.errors import LexicalError
 from lexer.dfa_loader import DFALoader
 from lexer.dfa_engine import DFAEngine
@@ -71,30 +71,6 @@ class Lexer:
 
         if state in self.dfa.final_states:
             token_type = state
-
-        STATE_TOKEN_MAP = {
-            "ID": "IDENTIFIER",
-            "NUM": "NUMBER",
-            "ASSIGN": "ASSIGN_OPERATOR",
-            "ARITHMETIC_OPERATOR": "ARITHMETIC_OPERATOR",
-            "STRING_LITERAL": "STRING_LITERAL",
-            "CHAR_LITERAL": "CHAR_LITERAL",
-            "SEMICOLON": "SEMICOLON",
-            "COMMA": "COMMA",
-            "DOT": "DOT",
-            "RANGE_OPERATOR": "RANGE_OPERATOR",
-            "COLON": "COLON",
-            "LPARENTHESIS": "LPARENTHESIS",
-            "RPARENTHESIS": "RPARENTHESIS",
-            "LBRACKET": "LBRACKET",
-            "RBRACKET": "RBRACKET",
-            "EQUAL": "RELATIONAL_OPERATOR",
-            "LESS_THAN": "RELATIONAL_OPERATOR",
-            "GREATER_THAN": "RELATIONAL_OPERATOR",
-            "LESS_EQUAL": "RELATIONAL_OPERATOR",
-            "GREATER_EQUAL": "RELATIONAL_OPERATOR",
-            "NOT_EQUAL": "RELATIONAL_OPERATOR"
-        }
 
         if token_type in STATE_TOKEN_MAP:
             token_type = STATE_TOKEN_MAP[token_type]
