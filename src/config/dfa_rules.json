@@ -1,7 +1,7 @@
 {
   "start_state": "S0",
   "final_states": [
-    "ID", "NUM", "NUM_REAL", "ARITHMETIC_OPERATOR", "ASSIGN", "COLON",
+    "ID", "NUM", "ARITHMETIC_OPERATOR", "ASSIGN", "COLON",
     "STRING_LITERAL", "CHAR_LITERAL", "SEMICOLON", "COMMA",
     "DOT", "RANGE_OPERATOR", "LPARENTHESIS", "RPARENTHESIS", "LBRACKET", "RBRACKET", 
     "LESS_THAN", "GREATER_THAN"
@@ -37,9 +37,6 @@
     },
     "NUM_DOT": {
       "<DIGIT>": "NUM"
-    },
-    "NUM_REAL": {
-      " ": "NUM_REAL"
     },
     "COLON": {
       "=": "ASSIGN"
