@@ -23,7 +23,7 @@ end;
 begin
   r := 3.14;
   ch := 'A';
-  ok := true and not false;    {comment}
+  ok := true and not false;   
   arr[1] := 2;
   if (arr[1] >= K) then
     arr[1] := AddOne(arr[1])

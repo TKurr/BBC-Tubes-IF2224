@@ -19,6 +19,9 @@ class DFAEngine:
         elif "<DIGIT>" in trans and char.isdigit():
             self.current_state = trans["<DIGIT>"]
             return True
+        if "<ANY>" in trans:
+            self.current_state = trans["<ANY>"]
+            return True
         else:
             return False
 
