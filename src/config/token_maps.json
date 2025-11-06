@@ -1,0 +1,46 @@
+{
+	"keywords": [
+		"program", "var", "begin", "end", "if", "then", "else", "while", "do", "for",
+		"to", "downto", "integer", "real", "boolean", "char", "array", "of",
+		"procedure", "function", "const", "type"
+	],
+	"operators_map": {
+		"+": "ARITHMETIC_OPERATOR",
+		"-": "ARITHMETIC_OPERATOR",
+		"*": "ARITHMETIC_OPERATOR",
+		"/": "ARITHMETIC_OPERATOR",
+		"div": "ARITHMETIC_OPERATOR",
+		"mod": "ARITHMETIC_OPERATOR",
+		":=": "ASSIGN_OPERATOR",
+		"=": "RELATIONAL_OPERATOR",
+		"<": "RELATIONAL_OPERATOR",
+		">": "RELATIONAL_OPERATOR",
+		"<=": "RELATIONAL_OPERATOR",
+		">=": "RELATIONAL_OPERATOR",
+		"<>": "RELATIONAL_OPERATOR",
+		"and": "LOGICAL_OPERATOR",
+		"or": "LOGICAL_OPERATOR",
+		"not": "LOGICAL_OPERATOR"
+	},
+	"state_token_map": {
+		"ID": "IDENTIFIER",
+		"NUM": "NUMBER",
+		"NUM_REAL": "NUMBER",
+		"ASSIGN": "ASSIGN_OPERATOR",
+		"ARITHMETIC_OPERATOR": "ARITHMETIC_OPERATOR",
+		"STRING_LITERAL": "STRING_LITERAL",
+		"CHAR_LITERAL": "CHAR_LITERAL",
+		"SEMICOLON": "SEMICOLON",
+		"COMMA": "COMMA",
+		"DOT": "DOT",
+		"RANGE_OPERATOR": "RANGE_OPERATOR",
+		"COLON": "COLON",
+		"LPARENTHESIS": "LPARENTHESIS",
+		"RPARENTHESIS": "RPARENTHESIS",
+		"LBRACKET": "LBRACKET",
+		"RBRACKET": "RBRACKET",
+		"RELATIONAL_OPERATOR": "RELATIONAL_OPERATOR",
+		"LESS_THAN": "RELATIONAL_OPERATOR",
+		"GREATER_THAN": "RELATIONAL_OPERATOR"
+	}
+}
