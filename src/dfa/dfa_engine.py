@@ -1,12 +1,13 @@
 from .dfa_config import DFAConfig
 
 class DFAEngine:
+    '''Runtime state transition'''
     def __init__(self, config: DFAConfig):
         self.config = config
         self.current_state = config.start_state
         self.last_final_state = None
 
-    def reset(self):
+    def reset_state(self):
         self.current_state = self.config.start_state
         self.last_final_state = None
 

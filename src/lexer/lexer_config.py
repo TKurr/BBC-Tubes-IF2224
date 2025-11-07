@@ -4,12 +4,14 @@ from src.utils import read_json
 
 @dataclass(frozen=True)
 class LexerConfig:
+    '''Store token mapper dari Json config'''
     keywords: Set[str]
     operators_map: Dict[str, str]
     state_token_map: Dict[str, str]
 
 
 class LexerConfigLoader:
+    '''Lexer config loader'''
     @staticmethod
     def load(path: str) -> LexerConfig:
         data = read_json(path)

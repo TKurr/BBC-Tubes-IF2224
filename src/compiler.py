@@ -14,14 +14,14 @@ def compiler():
         sys.exit(1)
 
     try:
-        # Path
+        # Config Path
         BASE_DIR = Path(sys.argv[0]).resolve().parent
         CONFIG_DIR = BASE_DIR / "src" / "config"
         STATE_PATH = os.path.join(CONFIG_DIR, "states.json")
         TRANSITIONS_PATH = os.path.join(CONFIG_DIR, "transitions.json")
         LEXER_CONFIG_PATH = os.path.join(CONFIG_DIR, "token_maps.json")
         
-        # Load
+        # Load config
         dfa_config = DFAConfigLoader.load(STATE_PATH, TRANSITIONS_PATH)
         lexer_config = LexerConfigLoader.load(LEXER_CONFIG_PATH)
 
@@ -51,9 +51,9 @@ def compiler():
     except LexicalError as e:
         print(str(e))
         sys.exit(1)
-
-	#output
-    output_dir = os.path.join(BASE_DIR, "test", "milestone-1", "output")
-    output_path = os.path.join(output_dir, "output.txt")
-    write_file(output,output_path)
-    print(f"SAVED!!! => {output_path}")
+        
+    #output
+    lexer_relative_path = '/'.join(['test','milestone-1','output','output.txt'])
+    lexer_output_path = os.path.join(BASE_DIR, lexer_relative_path)
+    write_file(output,lexer_output_path)
+    print(f"SAVED LEXER => {lexer_relative_path}")

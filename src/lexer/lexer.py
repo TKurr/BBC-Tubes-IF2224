@@ -5,6 +5,7 @@ from src.dfa.dfa_engine import DFAEngine
 from typing import List
 
 class Lexer:
+    '''Core class buat lexical analyzer'''
     def __init__(self, dfa_engine: DFAEngine, config: LexerConfig):
         self.dfa = dfa_engine
         self.config = config
@@ -13,14 +14,7 @@ class Lexer:
         self.text = ""
         self.index = 0
 
-    def _reset_state(self):
-        self.line = 1
-        self.column = 1
-        self.index = 0
-        self.text = ""
-
     def tokenize(self, text: str) -> List[Token]:
-        self._reset_state()
         self.text = text
         tokens: List[Token] = []
 
@@ -36,9 +30,9 @@ class Lexer:
                 self.index += 1
                 continue
 
-            self.dfa.reset() 
+            self.dfa.reset_state() 
             current_value = ""
-            last_valid_token = (None, None, -1, -1) 
+            temp_token = (None, None, -1, -1) # type, value, line, column
             start_col = self.column
             start_line = self.line
             
@@ -51,13 +45,16 @@ class Lexer:
                 current_value += char_to_check
                 
                 if self.dfa.last_final_state:
-                    last_valid_token = (current_value, self.dfa.last_final_state, start_line,start_col)
+                    temp_token = (current_value, self.dfa.last_final_state, start_line, start_col)
                     
                 temp_index += 1
 
-            value, final_state, line, col = last_valid_token
+            value, final_state, line, col = temp_token
             if value is None:
-                raise LexicalError(Token("UNKNOWN", self.text[self.index], self.line, self.column),f"Invalid character or token sequence")
+                invalid_char = self.text[self.index]
+                message = f"Invalid character: '{invalid_char}'"
+                error_token = Token("UNKNOWN", invalid_char, self.line, self.column)
+                raise LexicalError(error_token, message, self.text)
             
             token = self._create_token(value, final_state, line, col)
             tokens.append(token)
@@ -71,6 +68,7 @@ class Lexer:
         token_type = self.config.state_token_map.get(final_state)
         value_lower = value.lower()
 
+		# keyword & operators case insensitive pake lower value buat comparisson
         if token_type == "IDENTIFIER":
             if value_lower in self.config.keywords:
                 token_type = "KEYWORD"

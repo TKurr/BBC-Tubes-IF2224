@@ -6,6 +6,7 @@ StateTransitions = Dict[str,str]
 
 @dataclass(frozen=True)
 class DFAConfig:
+    '''Store states & transitions dari Json config'''
     start_state: str
     final_states: Set[str]
     states: Set[str]
@@ -13,6 +14,7 @@ class DFAConfig:
     
 
 class DFAConfigLoader: 
+    '''DFA confiig loader'''
     @staticmethod
     def load(state_path: str, transitions_path: str) -> DFAConfig:
         state_data = read_json(state_path)
