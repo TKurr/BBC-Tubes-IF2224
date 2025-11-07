@@ -1,17 +1,17 @@
-from .dfa_config import DFAConfig
-
 class DFAEngine:
-    def __init__(self, config: DFAConfig):
-        self.config = config
-        self.current_state = config.start_state
-        self.last_final_state = None
+    def __init__(self, start_state, final_states, transitions):
+        self.start_state = start_state
+        self.final_states = set(final_states)
+        self.transitions = transitions
+        self.current_state = start_state
+        self.last_final_state = None   # <-- nambah ini
 
     def reset(self):
-        self.current_state = self.config.start_state
-        self.last_final_state = None
+        self.current_state = self.start_state
+        self.last_final_state = None   # <-- reset juga
 
     def next_state(self, char):
-        trans = self.config.transitions.get(self.current_state, {})
+        trans = self.transitions.get(self.current_state, {})
 
         if char in trans:
             self.current_state = trans[char]
@@ -24,10 +24,10 @@ class DFAEngine:
         else:
             return False
 
-        if self.current_state in self.config.final_states:
+        if self.current_state in self.final_states:
             self.last_final_state = self.current_state
 
         return True
 
     def is_accepting(self):
-        return self.current_state in self.config.final_states
+        return self.current_state in self.final_states
