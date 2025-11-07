@@ -6,6 +6,7 @@ from src.dfa.dfa_engine import DFAEngine
 from src.dfa.dfa_config import DFAConfigLoader
 from src.lexer.lexer_config import LexerConfigLoader
 from src.lexer.lexical_error import LexicalError
+from src.parser.parse_error import ParseError
 from src.utils import read_file, format_tokens, write_file
 from src.parser.parser import Parser
 
@@ -56,6 +57,9 @@ def compiler():
 
         output = format_tokens(tokens)
     except LexicalError as e:
+        print(str(e))
+        sys.exit(1)
+    except ParseError as e:
         print(str(e))
         sys.exit(1)
         
