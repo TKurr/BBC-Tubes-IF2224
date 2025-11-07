@@ -7,6 +7,7 @@ from src.dfa.dfa_config import DFAConfigLoader
 from src.lexer.lexer_config import LexerConfigLoader
 from src.lexer.lexical_error import LexicalError
 from src.utils import read_file, format_tokens, write_file
+from src.parser.parser import Parser
 
 def compiler():
     if len(sys.argv) != 2:
@@ -47,6 +48,12 @@ def compiler():
 	# Tokenize
     try:
         tokens = lexer.tokenize(source_code)
+
+        parser = Parser(tokens)
+        root = parser.parse()
+
+        print(root)
+
         output = format_tokens(tokens)
     except LexicalError as e:
         print(str(e))
