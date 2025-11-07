@@ -21,7 +21,8 @@
 	},
 	"ID": {
 		"<LETTER>": "ID",
-		"<DIGIT>": "ID"
+		"<DIGIT>": "ID",
+		"_": "ID"
 	},
 	"NUM": {
 		"<DIGIT>": "NUM",
