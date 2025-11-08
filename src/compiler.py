@@ -49,17 +49,15 @@ def compiler():
 	# Tokenize
     try:
         tokens = lexer.tokenize(source_code)
-
         parser = Parser(tokens)
         root = parser.parse()
-
-        print(root)
-
-        output = format_tokens(tokens)
+        output = str(root)
+        # output = format_tokens(tokens)
     except LexicalError as e:
         print(str(e))
         sys.exit(1)
     except ParseError as e:
+        e.full_source_text = source_code
         print(str(e))
         sys.exit(1)
         
