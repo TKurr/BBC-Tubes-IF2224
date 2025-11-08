@@ -1,7 +1,7 @@
 {
 	"keywords": [
 		"program", "variabel", "mulai", "selesai", "jika", "maka", "selain_itu", "selama", "lakukan", "untuk",
-		"ke", "turun_ke", "integer", "real", "boolean", "char", "larik", "dari",
+		"ke", "turun_ke", "integer", "real", "boolean", "char", "larik", "dari","true", "false",
 		"prosedur", "fungsi", "konstanta", "tipe", "sampai", "ulangi", "rekaman", "kasus"
 	],
 	"operators_map": {
