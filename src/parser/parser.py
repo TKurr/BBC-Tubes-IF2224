@@ -89,10 +89,119 @@ class Parser:
             node.add_child(self.parse_subprogram_declaration())
         return node
 
-    def parse_const_declaration(self): pass
-    def parse_type_declaration(self): pass
-    def parse_var_declaration(self): pass
-    def parse_subprogram_declaration(self): pass
+    def parse_const_declaration(self):
+        node = ParseNode("<const-declaration>")
+        node.add_child(self.expect("KEYWORD", "konstanta"))
+        
+        while True:
+            node.add_child(self.expect("IDENTIFIER"))
+            
+            if self.check("RELATIONAL_OPERATOR") and self.current_token.value == "=":
+                node.add_child(self.expect("RELATIONAL_OPERATOR"))
+            else:
+                raise ParseError(f"Expected '=' in constant declaration", self.current_token)
+            
+            node.add_child(self.parse_expression())
+            node.add_child(self.expect("SEMICOLON"))
+            
+            if not self.check("IDENTIFIER"):
+                break
+        return node
+
+    def parse_type_declaration(self):
+        node = ParseNode("<type-declaration>")
+        node.add_child(self.expect("KEYWORD", "tipe"))
+        
+        while True:
+            node.add_child(self.expect("IDENTIFIER"))
+            
+            if self.check("RELATIONAL_OPERATOR") and self.current_token.value == "=":
+                node.add_child(self.expect("RELATIONAL_OPERATOR"))
+            else:
+                raise ParseError(f"Expected '=' in type declaration", self.current_token)
+            node.add_child(self.parse_type())
+            node.add_child(self.expect("SEMICOLON"))
+            
+            if not self.check("IDENTIFIER"):
+                break
+        return node
+    
+    def parse_var_declaration(self):
+        node = ParseNode("<var-declaration>")
+        node.add_child(self.expect("KEYWORD", "variabel"))
+        
+        while True:
+            node.add_child(self.parse_identifier_list())
+            node.add_child(self.expect("COLON"))
+            node.add_child(self.parse_type())
+            node.add_child(self.expect("SEMICOLON"))
+            
+            if not self.check("IDENTIFIER"):
+                break
+        return node
+    
+    def parse_subprogram_declaration(self):
+        if self.check("KEYWORD", "prosedur"):
+            return self.parse_procedure_declaration()
+        elif self.check("KEYWORD", "fungsi"):
+            return self.parse_function_declaration()
+        else:
+            raise ParseError(f"Expected 'prosedur' or 'fungsi'", self.current_token)
+
+    def parse_procedure_declaration(self):
+        node = ParseNode("<procedure-declaration>")
+        node.add_child(self.expect("KEYWORD", "prosedur"))
+        node.add_child(self.expect("IDENTIFIER"))
+        #parse parameter list
+        if self.check("LPARENTHESIS"):
+            node.add_child(self.parse_formal_parameter_list())
+        node.add_child(self.expect("SEMICOLON"))
+        #parse block
+        node.add_child(self.parse_block())
+        node.add_child(self.expect("SEMICOLON"))
+        return node
+    
+    def parse_function_declaration(self):
+        node = ParseNode("<function-declaration>")
+        node.add_child(self.expect("KEYWORD", "fungsi"))
+        node.add_child(self.expect("IDENTIFIER"))
+        #parse parameter list
+        if self.check("LPARENTHESIS"):
+            node.add_child(self.parse_formal_parameter_list())
+        #parse return type
+        node.add_child(self.expect("COLON"))
+        node.add_child(self.parse_type())
+        node.add_child(self.expect("SEMICOLON"))
+        #parse block
+        node.add_child(self.parse_block())
+        node.add_child(self.expect("SEMICOLON"))
+        return node
+    
+    def parse_block(self):
+        node = ParseNode("<block>")
+        node.add_child(self.parse_declaration_part())
+        node.add_child(self.parse_compound_statement())
+        return node
+    
+    def parse_formal_parameter_list(self):
+        node = ParseNode("<formal-parameter-list>")
+        node.add_child(self.expect("LPARENTHESIS"))
+        
+        node.add_child(self.parse_parameter_group())
+        
+        while self.check("SEMICOLON"):
+            node.add_child(self.expect("SEMICOLON"))
+            node.add_child(self.parse_parameter_group())
+        node.add_child(self.expect("RPARENTHESIS"))
+        return node
+
+    def parse_parameter_group(self):
+        '''Helper function for formal-parameter-list'''
+        node = ParseNode("<parameter-group>")
+        node.add_child(self.parse_identifier_list())
+        node.add_child(self.expect("COLON"))
+        node.add_child(self.parse_type())
+        return node
 
     # Type / Identifier helpers
     def parse_identifier_list(self): pass
