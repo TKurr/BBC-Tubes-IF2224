@@ -222,6 +222,11 @@ class Parser:
         if self.check("KEYWORD", "larik"):
             node.add_child(self.parse_array_type())
             return node
+
+        #rekaman
+        elif self.check("KEYWORD", "rekaman"):
+            node.add_child(self.parse_record_type())
+            return node
         
         #builtin type
         elif self.check("KEYWORD", "integer") or self.check("KEYWORD", "real") or \
@@ -245,6 +250,20 @@ class Parser:
         node.add_child(self.expect("KEYWORD", "dari"))
         node.add_child(self.parse_type())
         return node
+
+    def parse_record_type(self):
+        node = ParseNode("<record-type>")
+        node.add_child(self.expect("KEYWORD", "rekaman"))
+        node.add_child(self.parse_parameter_group())
+        
+        while self.check("SEMICOLON"):
+            node.add_child(self.expect("SEMICOLON"))
+            if self.check("KEYWORD", "selesai"):
+                break
+            node.add_child(self.parse_parameter_group())
+
+        node.add_child(self.expect("KEYWORD", "selesai"))
+        return node
     
     def parse_range(self):
         node = ParseNode("<range>")
@@ -266,36 +285,36 @@ class Parser:
         node.add_child(self.expect("KEYWORD", "selesai"))
         return node
 
-    def parse_kasus_statement(self):
-        node = ParseNode("<kasus-statement>")
+    def parse_case_statement(self):
+        node = ParseNode("<case-statement>")
         node.add_child(self.expect("KEYWORD", "kasus"))
         node.add_child(self.parse_expression())
         node.add_child(self.expect("KEYWORD", "dari"))
 
-        kasus_list = ParseNode("<kasus-list>")
+        case_list = ParseNode("<case-list>")
 
         while True:
             if (self.check("NUMBER") or self.check("CHAR_LITERAL") or self.check("STRING_LITERAL") or \
                 self.check("KEYWORD", "true") or self.check("KEYWORD", "false")):
-                kasus_list.add_child(self.expect(self.current_token.type))
+                case_list.add_child(self.expect(self.current_token.type))
             else:
                 raise ParseError("Expected constant in 'kasus' statement", self.current_token)
 
             if self.check("COMMA"):
                 self.expect("COMMA")
             else:
-                kasus_list.add_child(self.expect("COLON"))
-                kasus_list.add_child(self.parse_statement())
+                case_list.add_child(self.expect("COLON"))
+                case_list.add_child(self.parse_statement())
 
                 if self.check("SEMICOLON"):
-                    kasus_list.add_child(self.expect("SEMICOLON"))
+                    case_list.add_child(self.expect("SEMICOLON"))
                     if not (self.check("NUMBER") or self.check("CHAR_LITERAL") or self.check("STRING_LITERAL") or \
                             self.check("KEYWORD", "true") or self.check("KEYWORD", "false")):
                         break
                 else:
                     break
 
-        node.add_child(kasus_list)
+        node.add_child(case_list)
         return node
 
     def parse_statement_list(self):
@@ -330,9 +349,9 @@ class Parser:
         # Compound statement
         if self.check("KEYWORD", "mulai"):
             return self.parse_compound_statement()
-        # Kasus statement
+        # Case statement
         if self.check("KEYWORD", "kasus"):
-            return self.parse_kasus_statement()
+            return self.parse_case_statement()
         # Caller / Assignment statement
         if self.check("IDENTIFIER"):
             next_token = self.peek()
