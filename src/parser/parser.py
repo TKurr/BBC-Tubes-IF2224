@@ -292,6 +292,9 @@ class Parser:
         # For statement
         if self.check("KEYWORD", "untuk"):
             return self.parse_for_statement()
+        # Repeat statement
+        if self.check("KEYWORD", "ulangi"):
+            return self.parse_repeat_statement()
         # Compound statement
         if self.check("KEYWORD", "mulai"):
             return self.parse_compound_statement()
@@ -354,6 +357,23 @@ class Parser:
         node.add_child(self.parse_expression())
         node.add_child(self.expect("KEYWORD", "lakukan"))
         node.add_child(self.parse_statement())
+        return node
+    
+    def parse_repeat_statement(self):
+        node = ParseNode("<repeat-statement>")
+        node.add_child(self.expect("KEYWORD", "ulangi"))
+        stmt_list_node = ParseNode("<statement-list>")
+        stmt_list_node.add_child(self.parse_statement())
+        
+        while self.check("SEMICOLON"):
+            stmt_list_node.add_child(self.expect("SEMICOLON"))
+            if self.check("KEYWORD", "sampai"):
+                break
+            stmt_list_node.add_child(self.parse_statement())
+        
+        node.add_child(stmt_list_node)
+        node.add_child(self.expect("KEYWORD", "sampai"))
+        node.add_child(self.parse_expression()) 
         return node
 
     def parse_procedure_function_call(self):

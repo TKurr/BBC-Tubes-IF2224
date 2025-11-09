@@ -1,21 +1,103 @@
-KEYWORD(program)
-IDENTIFIER(Loop_Test)
-SEMICOLON(;)
-KEYWORD(variabel)
-IDENTIFIER(count_value)
-COLON(:)
-KEYWORD(integer)
-SEMICOLON(;)
-KEYWORD(mulai)
-KEYWORD(untuk)
-IDENTIFIER(count_value)
-KEYWORD(turun_ke)
-NUMBER(1)
-KEYWORD(lakukan)
-IDENTIFIER(tulis)
-LPARENTHESIS(()
-IDENTIFIER(count_value)
-RPARENTHESIS())
-SEMICOLON(;)
-KEYWORD(selesai)
-DOT(.)
+<program>
+├── <program-header>
+│   ├── KEYWORD(program)
+│   ├── IDENTIFIER(TestDeklarasiLengkap)
+│   └── SEMICOLON(;)
+├── <declaration-part>
+│   ├── <const-declaration>
+│   │   ├── KEYWORD(konstanta)
+│   │   ├── IDENTIFIER(MAX_SIZE)
+│   │   ├── RELATIONAL_OPERATOR(=)
+│   │   ├── <expression>
+│   │   │   └── <simple-expression>
+│   │   │       └── <term>
+│   │   │           └── <factor>
+│   │   │               └── NUMBER(100)
+│   │   ├── SEMICOLON(;)
+│   │   ├── IDENTIFIER(NAMA_KURSUS)
+│   │   ├── RELATIONAL_OPERATOR(=)
+│   │   ├── <expression>
+│   │   │   └── <simple-expression>
+│   │   │       └── <term>
+│   │   │           └── <factor>
+│   │   │               └── STRING_LITERAL('IF2224')
+│   │   └── SEMICOLON(;)
+│   ├── <type-declaration>
+│   │   ├── KEYWORD(tipe)
+│   │   ├── IDENTIFIER(Angka)
+│   │   ├── RELATIONAL_OPERATOR(=)
+│   │   ├── <type>
+│   │   │   └── KEYWORD(integer)
+│   │   ├── SEMICOLON(;)
+│   │   ├── IDENTIFIER(Pecahan)
+│   │   ├── RELATIONAL_OPERATOR(=)
+│   │   ├── <type>
+│   │   │   └── KEYWORD(real)
+│   │   ├── SEMICOLON(;)
+│   │   ├── IDENTIFIER(Status)
+│   │   ├── RELATIONAL_OPERATOR(=)
+│   │   ├── <type>
+│   │   │   └── KEYWORD(boolean)
+│   │   ├── SEMICOLON(;)
+│   │   ├── IDENTIFIER(Huruf)
+│   │   ├── RELATIONAL_OPERATOR(=)
+│   │   ├── <type>
+│   │   │   └── KEYWORD(char)
+│   │   ├── SEMICOLON(;)
+│   │   ├── IDENTIFIER(DaftarAngka)
+│   │   ├── RELATIONAL_OPERATOR(=)
+│   │   ├── <type>
+│   │   │   └── <array-type>
+│   │   │       ├── KEYWORD(larik)
+│   │   │       ├── LBRACKET([)
+│   │   │       ├── <range>
+│   │   │       │   ├── <expression>
+│   │   │       │   │   └── <simple-expression>
+│   │   │       │   │       └── <term>
+│   │   │       │   │           └── <factor>
+│   │   │       │   │               └── NUMBER(1)
+│   │   │       │   ├── RANGE_OPERATOR(..)
+│   │   │       │   └── <expression>
+│   │   │       │       └── <simple-expression>
+│   │   │       │           └── <term>
+│   │   │       │               └── <factor>
+│   │   │       │                   └── IDENTIFIER(MAX_SIZE)
+│   │   │       ├── RBRACKET(])
+│   │   │       ├── KEYWORD(dari)
+│   │   │       └── <type>
+│   │   │           └── IDENTIFIER(Angka)
+│   │   └── SEMICOLON(;)
+│   └── <var-declaration>
+│       ├── KEYWORD(variabel)
+│       ├── <identifier-list>
+│       │   └── IDENTIFIER(skor)
+│       ├── COLON(:)
+│       ├── <type>
+│       │   └── IDENTIFIER(DaftarAngka)
+│       ├── SEMICOLON(;)
+│       ├── <identifier-list>
+│       │   └── IDENTIFIER(nilai)
+│       ├── COLON(:)
+│       ├── <type>
+│       │   └── IDENTIFIER(Pecahan)
+│       ├── SEMICOLON(;)
+│       ├── <identifier-list>
+│       │   └── IDENTIFIER(lulus)
+│       ├── COLON(:)
+│       ├── <type>
+│       │   └── IDENTIFIER(Status)
+│       └── SEMICOLON(;)
+├── <compound-statement>
+│   ├── KEYWORD(mulai)
+│   ├── <statement-list>
+│   │   ├── <assignment-statement>
+│   │   │   ├── IDENTIFIER(nilai)
+│   │   │   ├── ASSIGN_OPERATOR(:=)
+│   │   │   └── <expression>
+│   │   │       └── <simple-expression>
+│   │   │           └── <term>
+│   │   │               └── <factor>
+│   │   │                   └── NUMBER(90.5)
+│   │   └── SEMICOLON(;)
+│   └── KEYWORD(selesai)
+└── DOT(.)
