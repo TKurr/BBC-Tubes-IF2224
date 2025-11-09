@@ -203,63 +203,177 @@ class Parser:
         node.add_child(self.parse_type())
         return node
 
-    # Type / Identifier helpers
-    def parse_identifier_list(self): pass
-    def parse_type(self): pass
-    def parse_array_type(self): pass
-    def parse_range(self): pass
+    # Type / Identifier
+    def parse_identifier_list(self):
+        '''Identifier, Identifier, Identifier'''
+        node = ParseNode("<identifier-list>")
+        node.add_child(self.expect("IDENTIFIER"))
+        
+        while self.check("COMMA"):
+            node.add_child(self.expect("COMMA"))
+            node.add_child(self.expect("IDENTIFIER"))
+        return node
+    
+    def parse_type(self):
+        '''parse variable type'''
+        node = ParseNode("<type>")
+        
+        #array type
+        if self.check("KEYWORD", "larik"):
+            node.add_child(self.parse_array_type())
+            return node
+        
+        #builtin type
+        elif self.check("KEYWORD", "integer") or self.check("KEYWORD", "real") or \
+             self.check("KEYWORD", "boolean") or self.check("KEYWORD", "char"):
+            node.add_child(self.expect("KEYWORD"))
+            return node
+        
+        #cusom type (identifier)
+        if self.check("IDENTIFIER"):
+            node.add_child(self.expect("IDENTIFIER"))
+            return node
+        
+        raise ParseError(f"Expected type", self.current_token)
+    
+    def parse_array_type(self):
+        node = ParseNode("<array-type>")
+        node.add_child(self.expect("KEYWORD", "larik"))
+        node.add_child(self.expect("LBRACKET"))
+        node.add_child(self.parse_range())
+        node.add_child(self.expect("RBRACKET"))
+        node.add_child(self.expect("KEYWORD", "dari"))
+        node.add_child(self.parse_type())
+        return node
+    
+    def parse_range(self):
+        node = ParseNode("<range>")
+        node.add_child(self.parse_expression())
+        
+        if self.check("RANGE_OPERATOR"):
+            node.add_child(self.expect("RANGE_OPERATOR"))
+        else:
+            raise ParseError("Expected '..' for range", self.current_token)
+        
+        node.add_child(self.parse_expression())
+        return node
 
     # Compound & Statements
     def parse_compound_statement(self):
         node = ParseNode("<compound-statement>")
+        node.add_child(self.expect("KEYWORD", "mulai"))
         node.add_child(self.parse_statement_list())
+        node.add_child(self.expect("KEYWORD", "selesai"))
         return node
 
-    def parse_statement_list(self): 
+    def parse_statement_list(self):
+        '''List of statements parser'''
         node = ParseNode("<statement-list>")
         node.add_child(self.parse_statement())
-    
-        while self.current_token.type == "SEMICOLON":
-            self.advance()
+        
+        while self.check("SEMICOLON"):
+            node.add_child(self.expect("SEMICOLON"))
+            if self.check("KEYWORD", "selesai"):
+                break
             node.add_child(self.parse_statement())
         return node
 
     def parse_statement(self):
-        t = self.current_token
-
-        if t.value.lower() == "jika":
+        '''Indivdual statement parser'''
+        # Statement kosong
+        if self.check("SEMICOLON") or self.check("KEYWORD", "selesai"):
+            return ParseNode("<empty-statement>")
+        # If statement
+        if self.check("KEYWORD", "jika"):
             return self.parse_if_statement()
-        elif t.value.lower() == "selama":
+        # While statement
+        if self.check("KEYWORD", "selama"):
             return self.parse_while_statement()
-        elif t.value.lower() == "untuk":
+        # For statement
+        if self.check("KEYWORD", "untuk"):
             return self.parse_for_statement()
-        elif t.value.lower() == "mulai":
+        # Compound statement
+        if self.check("KEYWORD", "mulai"):
             return self.parse_compound_statement()
-        elif t.type == "IDENTIFIER":
-            return self.parse_assignment_or_procedure_call()
-        else:
-            raise ParseError(f"Unexpected token {t.type}({t.value}) in statement", t)
+        # Caller / Assignment statement
+        if self.check("IDENTIFIER"):
+            next_token = self.peek()
+            if next_token and next_token.type == "ASSIGN_OPERATOR":
+                return self.parse_assignment_statement()
+            else:
+                return self.parse_procedure_function_call()
+        # Built-in procedure/function
+        if self.check("KEYWORD"):
+            return self.parse_procedure_function_call()
+        
+        raise ParseError(f"Unexpected token in statement", self.current_token)
 
-    # Specific statement types
+    # Specific statement 
     def parse_assignment_statement(self):
-        token = self.expect("IDENTIFIER")
-
-        if self.current_token and self.current_token.type == "ASSIGN":
-            node = ParseNode("<assignment-statement>")
-            node.add_child(self.parse_expression())
-            node.add_child(self.expect("SEMICOLON"))
-        elif self.current_token and self.current_token.type == "LPARENTHESIS":
-            node.add_child(token)
-            node.add_child(self.expect("LPARENTHESIS"))
-            if self.current_token and self.current_token.type == "RPARENTHESIS":
-                node.add_child(self.parse_parameter_list())
-            node.add_child(self.expect("RPARENTHESIS"))
+        node = ParseNode("<assignment-statement>")
+        node.add_child(self.expect("IDENTIFIER"))
+        node.add_child(self.expect("ASSIGN_OPERATOR"))
+        node.add_child(self.parse_expression())
         return node
 
-    def parse_if_statement(self): pass
-    def parse_while_statement(self): pass
-    def parse_for_statement(self): pass
-    def parse_procedure_function_call(self): pass
+    def parse_if_statement(self):
+        node = ParseNode("<if-statement>")
+        node.add_child(self.expect("KEYWORD", "jika"))
+        node.add_child(self.parse_expression())
+        node.add_child(self.expect("KEYWORD", "maka"))
+        node.add_child(self.parse_statement())
+        
+		# parse else
+        if self.check("KEYWORD", "selain_itu") or self.check("KEYWORD", "selain-itu"):
+            node.add_child(self.expect("KEYWORD"))
+            node.add_child(self.parse_statement())
+        return node
+
+    def parse_while_statement(self):
+        node = ParseNode("<while-statement>")
+        node.add_child(self.expect("KEYWORD", "selama"))
+        node.add_child(self.parse_expression())
+        node.add_child(self.expect("KEYWORD", "lakukan"))
+        node.add_child(self.parse_statement())
+        return node
+    
+    def parse_for_statement(self):
+        node = ParseNode("<for-statement>")
+        node.add_child(self.expect("KEYWORD", "untuk"))
+        node.add_child(self.expect("IDENTIFIER"))
+        node.add_child(self.expect("ASSIGN_OPERATOR"))
+        node.add_child(self.parse_expression())
+        
+        if self.check("KEYWORD", "ke"):
+            node.add_child(self.expect("KEYWORD", "ke"))
+        elif self.check("KEYWORD", "turun_ke"):
+            node.add_child(self.expect("KEYWORD", "turun_ke"))
+        else:
+            raise ParseError("Expected 'ke' or 'turun_ke' in for-statement", self.current_token)
+       
+        node.add_child(self.parse_expression())
+        node.add_child(self.expect("KEYWORD", "lakukan"))
+        node.add_child(self.parse_statement())
+        return node
+
+    def parse_procedure_function_call(self):
+        node = ParseNode("<procedure/function-call>")
+        
+        if self.check("IDENTIFIER"):
+            node.add_child(self.expect("IDENTIFIER"))
+        elif self.check("KEYWORD"):
+            node.add_child(self.expect("KEYWORD"))
+        else:
+            raise ParseError(f"Expected procedure/function name", self.current_token)
+        
+        # Parse parameter list (kalo ada args)
+        if self.check("LPARENTHESIS"):
+            node.add_child(self.expect("LPARENTHESIS"))
+            if not self.check("RPARENTHESIS"):
+                node.add_child(self.parse_parameter_list())
+            node.add_child(self.expect("RPARENTHESIS"))
+            
+        return node
 
     # Parameters
     def parse_formal_parameter_list(self): pass
