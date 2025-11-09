@@ -5,7 +5,7 @@ class Parser:
     def __init__(self, tokens):
         self.tokens = tokens
         self.pos = 0
-        self.current_token = self.tokens[0]
+        self.current_token = self.tokens[self.pos]
 
     # ========== Utility ==========
     def advance(self):
@@ -47,8 +47,8 @@ class Parser:
         if expected_value and self.current_token.value.lower() != expected_value.lower():
             return False
         return True
-    
-     # ========= Parse rules =========
+
+    # ========= Parse rules =========
     def parse(self):
         '''Main function caller'''
         node = self.parse_program()
@@ -107,7 +107,7 @@ class Parser:
             if not self.check("IDENTIFIER"):
                 break
         return node
-
+    
     def parse_type_declaration(self):
         node = ParseNode("<type-declaration>")
         node.add_child(self.expect("KEYWORD", "tipe"))
@@ -202,7 +202,7 @@ class Parser:
         node.add_child(self.expect("COLON"))
         node.add_child(self.parse_type())
         return node
-
+    
     # Type / Identifier
     def parse_identifier_list(self):
         '''Identifier, Identifier, Identifier'''
@@ -257,7 +257,7 @@ class Parser:
         
         node.add_child(self.parse_expression())
         return node
-
+    
     # Compound & Statements
     def parse_compound_statement(self):
         node = ParseNode("<compound-statement>")
@@ -376,17 +376,133 @@ class Parser:
         return node
 
     # Parameters
-    def parse_formal_parameter_list(self): pass
-    def parse_parameter_list(self): pass
+    def parse_parameter_list(self):
+        node = ParseNode("<parameter-list>")
+        node.add_child(self.parse_expression())
+        
+        while self.check("COMMA"):
+            node.add_child(self.expect("COMMA"))
+            node.add_child(self.parse_expression())
+        return node
 
     # Expressions
-    def parse_expression(self): pass
-    def parse_simple_expression(self): pass
-    def parse_term(self): pass
-    def parse_factor(self): pass
-    def parse_function_call(self): pass
+    def parse_expression(self):
+        node = ParseNode("<expression>")
+        node.add_child(self.parse_simple_expression())
+        
+        if self.is_relational_operator():
+            node.add_child(self.parse_relational_operator())
+            node.add_child(self.parse_simple_expression())
+        return node
+
+    def parse_simple_expression(self):
+        node = ParseNode("<simple-expression>")
+        
+        if self.check("ARITHMETIC_OPERATOR") and (self.current_token.value == "+" or self.current_token.value == "-"):
+            node.add_child(self.expect("ARITHMETIC_OPERATOR"))
+        
+        node.add_child(self.parse_term())
+        
+        while self.is_additive_operator():
+            node.add_child(self.parse_additive_operator())
+            node.add_child(self.parse_term())
+        
+        return node
+
+    def parse_term(self):
+        '''Multiplicatio operations'''
+        node = ParseNode("<term>")
+        node.add_child(self.parse_factor())
+        
+        while self.is_multiplicative_operator():
+            node.add_child(self.parse_multiplicative_operator())
+            node.add_child(self.parse_factor())
+        return node
+
+    def parse_factor(self):
+        node = ParseNode("<factor>")
+        
+        # Number literal
+        if self.check("NUMBER"):
+            node.add_child(self.expect("NUMBER"))
+        
+        # String literal
+        elif self.check("STRING_LITERAL"):
+            node.add_child(self.expect("STRING_LITERAL"))
+        
+        # Character literal
+        elif self.check("CHAR_LITERAL"):
+            node.add_child(self.expect("CHAR_LITERAL"))
+        
+        # Boolean literal (true/false)
+        elif self.check("KEYWORD", "true") or self.check("KEYWORD", "false"):
+            node.add_child(self.expect("KEYWORD"))
+        
+        # NOT operator
+        elif self.check("LOGICAL_OPERATOR", "tidak") or self.check("KEYWORD", "tidak"):
+            if self.check("LOGICAL_OPERATOR"):
+                node.add_child(self.expect("LOGICAL_OPERATOR"))
+            else:
+                node.add_child(self.expect("KEYWORD"))
+            node.add_child(self.parse_factor())
+        
+        # Ekspresi dalam tanda kurung
+        elif self.check("LPARENTHESIS"):
+            node.add_child(self.expect("LPARENTHESIS"))
+            node.add_child(self.parse_expression())
+            node.add_child(self.expect("RPARENTHESIS"))
+        
+        # Identifier (variable atau function/procedure call)
+        elif self.check("IDENTIFIER"):
+            next_token = self.peek()
+            
+            if next_token and next_token.type == "LPARENTHESIS":
+                node.add_child(self.parse_procedure_function_call())
+            else:
+                node.add_child(self.expect("IDENTIFIER"))    
+        else:
+            raise ParseError(f"Unexpected token in factor", self.current_token)
+        
+        return node
+        
 
     # Operators
-    def parse_relational_operator(self): pass
-    def parse_additive_operator(self): pass
-    def parse_multiplicative_operator(self): pass
+    def parse_relational_operator(self):
+        if self.check("RELATIONAL_OPERATOR"):
+            return self.expect("RELATIONAL_OPERATOR")
+        else:
+            raise ParseError(f"Expected relational operator", self.current_token)
+
+    def parse_additive_operator(self):
+        if self.check("ARITHMETIC_OPERATOR"):
+            return self.expect("ARITHMETIC_OPERATOR")
+        elif self.check("LOGICAL_OPERATOR", "atau"):
+            return self.expect("LOGICAL_OPERATOR")
+        else:
+            raise ParseError(f"Expected additive operator", self.current_token)
+        
+    def parse_multiplicative_operator(self):
+        if self.check("ARITHMETIC_OPERATOR"):
+            return self.expect("ARITHMETIC_OPERATOR")
+        elif self.check("LOGICAL_OPERATOR","dan"):
+            return self.expect("LOGICAL_OPERATOR","dan")
+        else:
+            raise ParseError(f"Expected multiplicative operator", self.current_token)
+        
+    # Helper function 
+    
+    def is_relational_operator(self):
+        if self.current_token is None:
+            return False
+        return self.check("RELATIONAL_OPERATOR") and self.current_token.value in ["<", ">", "<=", ">=", "=", "<>"]
+    
+    def is_additive_operator(self):
+        if self.current_token is None:
+            return False
+        return (self.check("ARITHMETIC_OPERATOR") and self.current_token.value in ["+", "-"]) or self.check("LOGICAL_OPERATOR", "atau")
+    
+    def is_multiplicative_operator(self):
+        if self.current_token is None:
+            return False
+        return (self.check("ARITHMETIC_OPERATOR") and self.current_token.value in ["*", "/","bagi","mod"]) or \
+            self.check("LOGICAL_OPERATOR","dan")
