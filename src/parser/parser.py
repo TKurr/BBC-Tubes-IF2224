@@ -266,6 +266,38 @@ class Parser:
         node.add_child(self.expect("KEYWORD", "selesai"))
         return node
 
+    def parse_kasus_statement(self):
+        node = ParseNode("<kasus-statement>")
+        node.add_child(self.expect("KEYWORD", "kasus"))
+        node.add_child(self.parse_expression())
+        node.add_child(self.expect("KEYWORD", "dari"))
+
+        kasus_list = ParseNode("<kasus-list>")
+
+        while True:
+            if (self.check("NUMBER") or self.check("CHAR_LITERAL") or self.check("STRING_LITERAL") or \
+                self.check("KEYWORD", "true") or self.check("KEYWORD", "false")):
+                kasus_list.add_child(self.expect(self.current_token.type))
+            else:
+                raise ParseError("Expected constant in 'kasus' statement", self.current_token)
+
+            if self.check("COMMA"):
+                self.expect("COMMA")
+            else:
+                kasus_list.add_child(self.expect("COLON"))
+                kasus_list.add_child(self.parse_statement())
+
+                if self.check("SEMICOLON"):
+                    kasus_list.add_child(self.expect("SEMICOLON"))
+                    if not (self.check("NUMBER") or self.check("CHAR_LITERAL") or self.check("STRING_LITERAL") or \
+                            self.check("KEYWORD", "true") or self.check("KEYWORD", "false")):
+                        break
+                else:
+                    break
+
+        node.add_child(kasus_list)
+        return node
+
     def parse_statement_list(self):
         '''List of statements parser'''
         node = ParseNode("<statement-list>")
@@ -298,6 +330,9 @@ class Parser:
         # Compound statement
         if self.check("KEYWORD", "mulai"):
             return self.parse_compound_statement()
+        # Kasus statement
+        if self.check("KEYWORD", "kasus"):
+            return self.parse_kasus_statement()
         # Caller / Assignment statement
         if self.check("IDENTIFIER"):
             next_token = self.peek()
