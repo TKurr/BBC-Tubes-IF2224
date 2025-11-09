@@ -1,4 +1,5 @@
 import json
+from src.lexer.token import Token
 
 def read_file(path):
     '''Read pascal file (input)'''
@@ -9,6 +10,26 @@ def read_json(path: str):
     '''Read config (json)'''
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+def read_txt(file_path):
+    tokens = []
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+
+            if "(" in line and line.endswith(")"):
+                token_type, token_value = line.split("(", 1)
+                token_value = token_value[:-1]  
+                token = Token(
+                    type=token_type.strip(),
+                    value=token_value.strip(),
+                    line=0,
+                    column=0
+                )
+                tokens.append(token)
+    return tokens
 
 def format_tokens(tokens):
     '''Format tokens output berdasarkan spek'''
