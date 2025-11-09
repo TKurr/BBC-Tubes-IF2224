@@ -7,13 +7,17 @@ from src.dfa.dfa_config import DFAConfigLoader
 from src.lexer.lexer_config import LexerConfigLoader
 from src.lexer.lexical_error import LexicalError
 from src.parser.parse_error import ParseError
-from src.utils import read_file, format_tokens, write_file
+from src.utils import read_file, write_file, format_output, print_usage
 from src.parser.parser import Parser
 
 def compiler():
     if len(sys.argv) != 2:
-        print("Usage: python main.py <source_file.pas>")
+        print_usage()
         sys.exit(1)
+    else:
+        parts = sys.argv[1].replace("\\", "/").split("/")
+        dir_output = parts[0]
+        print(dir_output)
 
     try:
         # Config Path
@@ -39,20 +43,20 @@ def compiler():
     lexer = Lexer(dfa_engine, lexer_config)
     
     # Input source file
-    source_path = os.path.join(BASE_DIR, "test", "milestone-2", "input", sys.argv[1])
+    source_path = BASE_DIR / "test" / sys.argv[1]
     try:
         source_code = read_file(source_path)
     except FileNotFoundError:
-        print(f"[Error] File '{source_path}' not found.")
+        print_usage()
         sys.exit(1)
 
-	# Tokenize
     try:
+        #Tokenize
         tokens = lexer.tokenize(source_code)
+        
+        #Parse Tree
         parser = Parser(tokens)
         root = parser.parse()
-        output = str(root)
-        # output = format_tokens(tokens)
     except LexicalError as e:
         print(str(e))
         sys.exit(1)
@@ -62,7 +66,8 @@ def compiler():
         sys.exit(1)
         
     #output
-    lexer_relative_path = '/'.join(['test','milestone-2','output','output.txt'])
+    output = format_output(root,tokens,dir_output)
+    lexer_relative_path = '/'.join(['test',dir_output,'output','output.txt'])
     lexer_output_path = os.path.join(BASE_DIR, lexer_relative_path)
     write_file(output,lexer_output_path)
-    print(f"SAVED LEXER => {lexer_relative_path}")
+    print(f"SAVED	=>	{lexer_relative_path}")

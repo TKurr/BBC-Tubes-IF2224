@@ -18,3 +18,16 @@ def write_file(output, output_path):
     '''Write formatted token ke output path'''
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(output)
+        
+def format_output(root, tokens, dir_output):
+    '''Output helper'''
+    output = ""
+    if int(dir_output[-1:]) == 1:
+        output = format_tokens(tokens)
+    elif int(dir_output[-1:]) == 2:
+        output = str(root)
+    return output
+
+def print_usage():
+    '''Usage for input error'''
+    print("Usage: python main.py <milestone-x/input/source_file.pas>")
