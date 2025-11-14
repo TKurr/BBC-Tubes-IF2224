@@ -60,8 +60,11 @@ def compiler():
         sys.exit(1)
 
     try:
-        parser = Parser(tokens)
-        root = parser.parse()
+        # biar milestone-1 ga parse 
+        root = None
+        if dir_output == "milestone-2":
+            parser = Parser(tokens)
+            root = parser.parse()
 
     except ParseError as e:
         if dir_output == "milestone-1":
