@@ -7,7 +7,7 @@ from src.dfa.dfa_config import DFAConfigLoader
 from src.lexer.lexer_config import LexerConfigLoader
 from src.lexer.lexical_error import LexicalError
 from src.parser.parse_error import ParseError
-from src.utils import read_file, write_file, format_output, print_usage, read_txt
+from src.utils import read_file, write_file, format_output, print_usage
 from src.parser.parser import Parser
 
 def compiler():
@@ -46,13 +46,9 @@ def compiler():
     source_path = BASE_DIR / "test" / sys.argv[1]
     try:
         # Milestone 1: read pascal -> tokenize
-        if dir_output == "milestone-1":
+        if dir_output == "milestone-1" or dir_output == "milestone-2":
             source_code = read_file(source_path)
             tokens = lexer.tokenize(source_code)
-
-        # Milestone 2: read tokens from .txt
-        elif dir_output == "milestone-2":
-            tokens = read_txt(source_path)
         else:
             print("[Error] Unknown directory, expected milestone-1 or milestone-2")
             sys.exit(1)
