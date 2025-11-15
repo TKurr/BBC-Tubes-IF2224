@@ -307,7 +307,7 @@ class Parser:
     def parse_variable(self):
         '''parse variable, dot chaining + indexing '''
         node = ParseNode("<variable>")
-        print("DEBUG VARIABLE TOKEN:", self.current_token.type, self.current_token.value)
+        # print("DEBUG VARIABLE TOKEN:", self.current_token.type, self.current_token.value)
 
         identifier = self.expect("IDENTIFIER")
         node.add_child(identifier)
