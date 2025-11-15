@@ -267,7 +267,6 @@ class Parser:
 
     def parse_variable_index(self):
         node = ParseNode("<variable-index>")
-        node.add_child(self.expect("IDENTIFIER"))
 
         while self.check("LBRACKET"):
             node.add_child(self.expect("LBRACKET"))
@@ -380,7 +379,9 @@ class Parser:
     # Specific statement 
     def parse_assignment_statement(self):
         node = ParseNode("<assignment-statement>")
-        node.add_child(self.parse_variable_index())
+        node.add_child(self.expect("IDENTIFIER"))
+        if (self.check("LBRACKET")):
+            node.add_child(self.parse_variable_index())
         node.add_child(self.expect("ASSIGN_OPERATOR"))
         node.add_child(self.parse_expression())
         return node
@@ -540,14 +541,17 @@ class Parser:
         
         # Identifier (variable atau function/procedure call)
         elif self.check("IDENTIFIER"):
-            next_token = self.peek()
-            
-            if next_token and next_token.type == "LPARENTHESIS":
-                node.add_child(self.parse_procedure_function_call())
-            elif next_token and next_token.type == "LBRACKET":
+            ident = self.expect("IDENTIFIER")
+            node.add_child(ident)
+
+            if self.check("LPARENTHESIS"):
+                node.add_child(self.expect("LPARENTHESIS"))
+                if not self.check("RPARENTHESIS"):
+                    node.add_child(self.parse_parameter_list())
+                node.add_child(self.expect("RPARENTHESIS"))
+
+            while self.check("LBRACKET"):
                 node.add_child(self.parse_variable_index())
-            else:
-                node.add_child(self.expect("IDENTIFIER"))    
         else:
             raise ParseError(f"Unexpected token in factor", self.current_token)
         
