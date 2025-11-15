@@ -65,13 +65,9 @@ def compiler():
         if dir_output == "milestone-2":
             parser = Parser(tokens)
             root = parser.parse()
-
+            
     except ParseError as e:
-        if dir_output == "milestone-1":
-            e.full_source_text = source_code
-        else:
-            token_values = [t.value for t in tokens]
-            e.full_source_text = "\n".join(token_values)
+        e.full_source_text = source_code 
         print(str(e))
         sys.exit(1)
         

@@ -8,7 +8,7 @@ mulai
     a[i] := i;
   untuk i := 3 turun_ke 0 lakukan
     a[i] := a[i] + 1;
-  jika a[1] < a[2] maka
+  jika a[1] asdf< a[2] maka
     a[1] := a[2];
   selama i > 0 lakukan
     i := i - 1;

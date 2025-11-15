@@ -5,10 +5,12 @@ class ParseError(Exception):
         self.column = token.column
         self.value = token.value
         self.type = token.type
-        
+        self.full_source_text = None  
+
     def __str__(self):
         if not self.full_source_text:
-            return f"SyntaxError at line {self.line}, column {self.column}: {self.message}"
+            return f"SyntaxError at line {self.line}, column {self.column}: {self.message} (Token: {self.value})"
+
         lines = self.full_source_text.split('\n')
         error_line = lines[self.line - 1] if 0 < self.line <= len(lines) else ""
         error_line = error_line.rstrip()
