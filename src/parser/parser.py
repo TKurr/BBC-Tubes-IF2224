@@ -58,7 +58,7 @@ class Parser:
     
 	# Root
     def parse_program(self):
-        '''Root node parse'''
+        '''Root node parse: header + declaration + compound statement + ending dot'''
         node = ParseNode("<program>")
         node.add_child(self.parse_program_header())
         node.add_child(self.parse_declaration_part())
@@ -68,7 +68,7 @@ class Parser:
 
 	# Header
     def parse_program_header(self):
-        '''Header node parse'''
+        '''Header node parser'''
         node = ParseNode("<program-header>")
         node.add_child(self.expect("KEYWORD","program"))
         node.add_child(self.expect("IDENTIFIER"))
@@ -77,7 +77,7 @@ class Parser:
 
 	# Declaration rules
     def parse_declaration_part(self):
-        '''Strict urutan initialization dari pascal-s'''
+        '''Strict urutan initialization dari pascal-s: const -> type -> var -> subprogram'''
         node = ParseNode("<declaration-part>")
         while self.check("KEYWORD", "konstanta"):
             node.add_child(self.parse_const_declaration())
@@ -90,6 +90,7 @@ class Parser:
         return node
 
     def parse_const_declaration(self):
+        '''Parse const declaration'''
         node = ParseNode("<const-declaration>")
         node.add_child(self.expect("KEYWORD", "konstanta"))
         
@@ -109,6 +110,7 @@ class Parser:
         return node
     
     def parse_type_declaration(self):
+        '''Parse type declaration'''
         node = ParseNode("<type-declaration>")
         node.add_child(self.expect("KEYWORD", "tipe"))
         
@@ -119,7 +121,7 @@ class Parser:
                 node.add_child(self.expect("RELATIONAL_OPERATOR"))
             else:
                 raise ParseError(f"Expected '=' in type declaration", self.current_token)
-            node.add_child(self.parse_type())
+            node.add_child(self.parse_type_definition())
             node.add_child(self.expect("SEMICOLON"))
             
             if not self.check("IDENTIFIER"):
@@ -127,6 +129,7 @@ class Parser:
         return node
     
     def parse_var_declaration(self):
+        '''Parse variable declaration'''
         node = ParseNode("<var-declaration>")
         node.add_child(self.expect("KEYWORD", "variabel"))
         
@@ -214,8 +217,43 @@ class Parser:
             node.add_child(self.expect("IDENTIFIER"))
         return node
     
+    def parse_type_definition(self):
+        '''tipe di type-declaration saja, supports range'''
+        node = ParseNode("<type-definition>")
+
+        # RANGE TYPE (expression '..' expression)
+        if self.lookahead_is_range():
+            left_expr = self.parse_expression() 
+            node.add_child(left_expr)
+            node.add_child(self.expect("RANGE_OPERATOR"))
+            node.add_child(self.parse_expression())
+            return node
+
+        # ARRAY TYPE
+        if self.check("KEYWORD", "larik"):
+            node.add_child(self.parse_array_type())
+            return node
+
+        # RECORD TYPE
+        if self.check("KEYWORD", "rekaman"):
+            node.add_child(self.parse_record_type())
+            return node
+
+        # BUILTIN TYPE
+        if self.check("KEYWORD", "integer") or self.check("KEYWORD", "real") or \
+        self.check("KEYWORD", "boolean") or self.check("KEYWORD", "char"):
+            node.add_child(self.expect("KEYWORD"))
+            return node
+
+        # CUSTOM TYPE
+        if self.check("IDENTIFIER"):
+            node.add_child(self.expect("IDENTIFIER"))
+            return node
+
+        raise ParseError("Invalid type-definition", self.current_token)
+
     def parse_type(self):
-        '''parse variable type'''
+        '''parse type di variable declaration or function return type (ga ada range)'''
         node = ParseNode("<type>")
         
         #array type
@@ -227,20 +265,21 @@ class Parser:
         elif self.check("KEYWORD", "rekaman"):
             node.add_child(self.parse_record_type())
             return node
-        
+
         #builtin type
         elif self.check("KEYWORD", "integer") or self.check("KEYWORD", "real") or \
              self.check("KEYWORD", "boolean") or self.check("KEYWORD", "char"):
             node.add_child(self.expect("KEYWORD"))
             return node
         
-        #cusom type (identifier)
+        #custom type (identifier)
         if self.check("IDENTIFIER"):
             node.add_child(self.expect("IDENTIFIER"))
             return node
         
         raise ParseError(f"Expected type", self.current_token)
     
+
     def parse_array_type(self):
         node = ParseNode("<array-type>")
         node.add_child(self.expect("KEYWORD", "larik"))
@@ -264,14 +303,35 @@ class Parser:
 
         node.add_child(self.expect("KEYWORD", "selesai"))
         return node
+    
+    def parse_variable(self):
+        '''parse variable, dot chaining + indexing '''
+        node = ParseNode("<variable>")
+        print("DEBUG VARIABLE TOKEN:", self.current_token.type, self.current_token.value)
+
+        identifier = self.expect("IDENTIFIER")
+        node.add_child(identifier)
+        
+        while True:
+            if self.check("DOT"):
+                node.add_child(self.expect("DOT"))
+                node.add_child(self.expect("IDENTIFIER"))
+
+            elif self.check("LBRACKET"):
+                node.add_child(self.parse_variable_index())
+
+            else:
+                break
+
+        return node
 
     def parse_variable_index(self):
+        '''Array index access: [expr]'''
         node = ParseNode("<variable-index>")
 
-        while self.check("LBRACKET"):
-            node.add_child(self.expect("LBRACKET"))
-            node.add_child(self.parse_expression())
-            node.add_child(self.expect("RBRACKET"))
+        node.add_child(self.expect("LBRACKET"))
+        node.add_child(self.parse_expression())
+        node.add_child(self.expect("RBRACKET"))
 
         return node
 
@@ -366,10 +426,10 @@ class Parser:
         # Caller / Assignment statement
         if self.check("IDENTIFIER"):
             next_token = self.peek()
-            if next_token and (next_token.type == "ASSIGN_OPERATOR" or next_token.type == "LBRACKET"):
-                return self.parse_assignment_statement()
-            else:
+            if next_token and next_token.type == "LPARENTHESIS":
                 return self.parse_procedure_function_call()
+            else:
+                return self.parse_assignment_statement()
         # Built-in procedure/function
         if self.check("KEYWORD"):
             return self.parse_procedure_function_call()
@@ -378,10 +438,9 @@ class Parser:
 
     # Specific statement 
     def parse_assignment_statement(self):
+        '''Assignment statement parser'''
         node = ParseNode("<assignment-statement>")
-        node.add_child(self.expect("IDENTIFIER"))
-        if (self.check("LBRACKET")):
-            node.add_child(self.parse_variable_index())
+        node.add_child(self.parse_variable())
         node.add_child(self.expect("ASSIGN_OPERATOR"))
         node.add_child(self.parse_expression())
         return node
@@ -444,6 +503,7 @@ class Parser:
         return node
 
     def parse_procedure_function_call(self):
+        '''Procedure/function call parser: name(args), name bisa identifier atau builtin keyword'''
         node = ParseNode("<procedure/function-call>")
         
         if self.check("IDENTIFIER"):
@@ -474,7 +534,9 @@ class Parser:
 
     # Expressions
     def parse_expression(self):
+        '''Expression parser'''
         node = ParseNode("<expression>")
+
         node.add_child(self.parse_simple_expression())
         
         if self.is_relational_operator():
@@ -483,7 +545,9 @@ class Parser:
         return node
 
     def parse_simple_expression(self):
+        '''parse simple expression'''
         node = ParseNode("<simple-expression>")
+
         
         if self.check("ARITHMETIC_OPERATOR") and (self.current_token.value == "+" or self.current_token.value == "-"):
             node.add_child(self.expect("ARITHMETIC_OPERATOR"))
@@ -497,8 +561,9 @@ class Parser:
         return node
 
     def parse_term(self):
-        '''Multiplicatio operations'''
+        '''Multiplicatio operations chain (* / mod dan)'''
         node = ParseNode("<term>")
+
         node.add_child(self.parse_factor())
         
         while self.is_multiplicative_operator():
@@ -507,8 +572,9 @@ class Parser:
         return node
 
     def parse_factor(self):
+        '''parse factor'''
         node = ParseNode("<factor>")
-        
+
         # Number literal
         if self.check("NUMBER"):
             node.add_child(self.expect("NUMBER"))
@@ -541,17 +607,12 @@ class Parser:
         
         # Identifier (variable atau function/procedure call)
         elif self.check("IDENTIFIER"):
-            ident = self.expect("IDENTIFIER")
-            node.add_child(ident)
+            next_token = self.peek()
 
-            if self.check("LPARENTHESIS"):
-                node.add_child(self.expect("LPARENTHESIS"))
-                if not self.check("RPARENTHESIS"):
-                    node.add_child(self.parse_parameter_list())
-                node.add_child(self.expect("RPARENTHESIS"))
-
-            while self.check("LBRACKET"):
-                node.add_child(self.parse_variable_index())
+            if next_token and next_token.type == "LPARENTHESIS":
+                node.add_child(self.parse_procedure_function_call())
+            else:
+                node.add_child(self.parse_variable())
         else:
             raise ParseError(f"Unexpected token in factor", self.current_token)
         
@@ -598,3 +659,18 @@ class Parser:
             return False
         return (self.check("ARITHMETIC_OPERATOR") and self.current_token.value in ["*", "/","bagi","mod"]) or \
             self.check("LOGICAL_OPERATOR","dan")
+    
+    def lookahead_is_range(self):
+        ''' detect range-type pattern <expr> .. <expr>, cuman dalem type-definition'''
+
+        t1 = self.current_token
+        t2 = self.peek()
+
+        if t1 is None or t2 is None:
+            return False
+
+        # hanya allowed: NUMBER, IDENTIFIER, LPAREN
+        if t1.type not in ("NUMBER", "IDENTIFIER", "LPARENTHESIS"):
+            return False
+
+        return t2.type == "RANGE_OPERATOR"
