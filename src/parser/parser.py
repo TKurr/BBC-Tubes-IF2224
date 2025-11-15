@@ -264,6 +264,18 @@ class Parser:
 
         node.add_child(self.expect("KEYWORD", "selesai"))
         return node
+
+    def parse_variable_index(self):
+        node = ParseNode("<variable-index>")
+        node.add_child(self.expect("IDENTIFIER"))
+
+        while self.check("LBRACKET"):
+            node.add_child(self.expect("LBRACKET"))
+            node.add_child(self.parse_expression())
+            node.add_child(self.expect("RBRACKET"))
+
+        return node
+
     
     def parse_range(self):
         node = ParseNode("<range>")
@@ -355,7 +367,7 @@ class Parser:
         # Caller / Assignment statement
         if self.check("IDENTIFIER"):
             next_token = self.peek()
-            if next_token and next_token.type == "ASSIGN_OPERATOR":
+            if next_token and (next_token.type == "ASSIGN_OPERATOR" or next_token.type == "LBRACKET"):
                 return self.parse_assignment_statement()
             else:
                 return self.parse_procedure_function_call()
@@ -368,7 +380,7 @@ class Parser:
     # Specific statement 
     def parse_assignment_statement(self):
         node = ParseNode("<assignment-statement>")
-        node.add_child(self.expect("IDENTIFIER"))
+        node.add_child(self.parse_variable_index())
         node.add_child(self.expect("ASSIGN_OPERATOR"))
         node.add_child(self.parse_expression())
         return node
@@ -532,6 +544,8 @@ class Parser:
             
             if next_token and next_token.type == "LPARENTHESIS":
                 node.add_child(self.parse_procedure_function_call())
+            elif next_token and next_token.type == "LBRACKET":
+                node.add_child(self.parse_variable_index())
             else:
                 node.add_child(self.expect("IDENTIFIER"))    
         else:
