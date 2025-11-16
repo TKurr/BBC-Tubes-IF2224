@@ -431,7 +431,7 @@ class Parser:
             else:
                 return self.parse_assignment_statement()
         # Built-in procedure/function
-        if self.check("KEYWORD"):
+        if self.check("KEYWORD") and self.peek() and self.peek().type == "LPARENTHESIS":
             return self.parse_procedure_function_call()
         
         raise ParseError(f"Unexpected token in statement", self.current_token)
