@@ -512,13 +512,15 @@ class Parser:
             node.add_child(self.expect("KEYWORD"))
         else:
             raise ParseError(f"Expected procedure/function name", self.current_token)
-        
+
+        if not self.check("LPARENTHESIS"):
+            raise ParseError("Expected '(' after procedure/function name", self.current_token)
+
         # Parse parameter list (kalo ada args)
-        if self.check("LPARENTHESIS"):
-            node.add_child(self.expect("LPARENTHESIS"))
-            if not self.check("RPARENTHESIS"):
-                node.add_child(self.parse_parameter_list())
-            node.add_child(self.expect("RPARENTHESIS"))
+        node.add_child(self.expect("LPARENTHESIS"))
+        if not self.check("RPARENTHESIS"):
+            node.add_child(self.parse_parameter_list())
+        node.add_child(self.expect("RPARENTHESIS"))
             
         return node
 
