@@ -20,13 +20,15 @@ def write_file(output, output_path):
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(output)
         
-def format_output(root, tokens, dir_output):
+def format_output(ast_root, root, tokens, dir_output):
     '''Output helper'''
     output = ""
     if int(dir_output[-1:]) == 1:
         output = format_tokens(tokens)
     elif int(dir_output[-1:]) == 2:
         output = str(root)
+    elif int(dir_output[-1:]) == 3:
+        output = str(ast_root)
     return output
 
 def print_usage():
