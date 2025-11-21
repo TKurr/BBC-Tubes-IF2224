@@ -4,12 +4,13 @@ class ProgramNode(ASTNode):
     def __init__(self, name, declarations=None, block=None):
         super().__init__()
         self.name = name
-        self.declarations = declarations
+        self.declarations = declarations or []
         self.block = block
+
         if self.declarations:
-            self.add_child(DeclarationsNode(self.declarations))
+            self.children.extend(self.declarations)
         if self.block:
-            self.add_child(self.block)
+            self.children.append(self.block)
 
     def __repr__(self):
         return f"ProgramNode(name='{self.name}')"
@@ -17,22 +18,20 @@ class ProgramNode(ASTNode):
 class BlockNode(ASTNode):
     def __init__(self, statements=None):
         super().__init__()
-        self.statements = statements if statements else []
-        for stmt in self.statements:
-            self.add_child(stmt)
+        self.statements = statements or []
+        self.children.extend(self.statements)
 
     def __repr__(self):
-        return "Block"
+        return "BlockNode"
 
 class DeclarationsNode(ASTNode):
     def __init__(self, declarations=None):
         super().__init__()
-        self.declarations = declarations if declarations else []
-        for d in self.declarations:
-            self.add_child(d)
+        self.declarations = declarations or []
+        self.children.extend(self.declarations)
 
     def __repr__(self):
-        return "Declarations"
+        return "DeclarationsNode"
 
 class VarDeclNode(ASTNode):
     def __init__(self, name, vartype):
@@ -48,11 +47,10 @@ class AssignNode(ASTNode):
         super().__init__()
         self.target = target
         self.value = value
-        self.add_child(self.target)
-        self.add_child(self.value)
+        self.children.extend([target, value])
 
     def __repr__(self):
-        return f"AssignNode(target: {self.target}, value: {self.value})"
+        return f"AssignNode(target={self.target}, value={self.value})"
 
 class VarNode(ASTNode):
     def __init__(self, name):
@@ -70,12 +68,20 @@ class NumNode(ASTNode):
     def __repr__(self):
         return f"NumNode({self.value})"
 
+class StringNode(ASTNode):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+
+    def __repr__(self):
+        return f"StringNode({self.value})"
+
 class UnaryOpNode(ASTNode):
     def __init__(self, op, operand):
         super().__init__()
         self.op = op
         self.operand = operand
-        self.add_child(operand)
+        self.children.append(operand)
 
     def __repr__(self):
         return f"UnaryOpNode(op='{self.op}', operand={self.operand})"
@@ -86,9 +92,7 @@ class BinOpNode(ASTNode):
         self.left = left
         self.op = op
         self.right = right
-
-        self.add_child(left)
-        self.add_child(right)
+        self.children.extend([left, right])
 
     def __repr__(self):
         return f"BinOpNode(op='{self.op}', left={self.left}, right={self.right})"
@@ -97,20 +101,11 @@ class ProcedureCallNode(ASTNode):
     def __init__(self, name, args=None):
         super().__init__()
         self.name = name
-        self.args = args if args else []
-        for a in self.args:
-            self.add_child(a)
+        self.args = args or []
+        self.children.extend(self.args)
 
     def __repr__(self):
         return f"ProcedureCallNode(name='{self.name}', args={self.args})"
-
-class StringNode(ASTNode):
-    def __init__(self, value):
-        super().__init__()
-        self.value = value
-
-    def __repr__(self):
-        return f"StringNode({self.value})"
 
 class IfNode(ASTNode):
     def __init__(self, condition, then_block, else_block=None):
@@ -118,10 +113,9 @@ class IfNode(ASTNode):
         self.condition = condition
         self.then_block = then_block
         self.else_block = else_block
-        self.add_child(condition)
-        self.add_child(then_block)
+        self.children.extend([condition, then_block])
         if else_block:
-            self.add_child(else_block)
+            self.children.append(else_block)
 
     def __repr__(self):
         return f"IfNode(condition={self.condition}, then={self.then_block}, else={self.else_block})"
@@ -131,8 +125,7 @@ class WhileNode(ASTNode):
         super().__init__()
         self.condition = condition
         self.body = body
-        self.add_child(condition)
-        self.add_child(body)
+        self.children.extend([condition, body])
 
     def __repr__(self):
         return f"WhileNode(condition={self.condition}, body={self.body})"
@@ -142,8 +135,7 @@ class RepeatNode(ASTNode):
         super().__init__()
         self.body = body
         self.condition = condition
-        self.add_child(body)
-        self.add_child(condition)
+        self.children.extend([body, condition])
 
     def __repr__(self):
         return f"RepeatNode(body={self.body}, until={self.condition})"
@@ -156,42 +148,29 @@ class ForNode(ASTNode):
         self.end_expr = end_expr
         self.direction = direction
         self.body = body
-
-        self.add_child(var_node)
-        self.add_child(start_expr)
-        self.add_child(end_expr)
-        self.add_child(body)
+        self.children.extend([var_node, start_expr, end_expr, body])
 
     def __repr__(self):
         return f"ForNode({self.var_node} := {self.start_expr} {self.direction} {self.end_expr}, body={self.body})"
-
-class CaseNode(ASTNode):
-    def __init__(self, expr_node, branches):
-        super().__init__()
-        self.expr_node = expr_node
-        self.branches = branches
-
-        self.add_child(expr_node)
-        for branch in branches:
-            self.add_child(branch)
-
-    def __repr__(self):
-        repr_branches = []
-        for branch in self.branches:  # <-- langsung objek
-            repr_constants = ", ".join([str(c) for c in branch.constants])
-            repr_branches.append(f"[{repr_constants}] => {branch.statement}")
-        return f"CaseNode(expr={self.expr_node}, branches={{ {', '.join(repr_branches)} }})"
 
 class CaseBranchNode(ASTNode):
     def __init__(self, constants, statement):
         super().__init__()
         self.constants = constants
         self.statement = statement
-
-        for c in constants:
-            self.add_child(c)
-        self.add_child(statement)
+        self.children.extend(constants + [statement])
 
     def __repr__(self):
-        consts = ", ".join([str(c) for c in self.constants])
+        consts = ", ".join(str(c) for c in self.constants)
         return f"CaseBranchNode([{consts}] => {self.statement})"
+
+class CaseNode(ASTNode):
+    def __init__(self, expr_node, branches):
+        super().__init__()
+        self.expr_node = expr_node
+        self.branches = branches
+        self.children.append(expr_node)
+        self.children.extend(branches)
+
+    def __repr__(self):
+        return f"CaseNode(expr={self.expr_node}, branches={self.branches})"
