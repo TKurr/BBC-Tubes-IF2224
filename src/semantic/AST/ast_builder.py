@@ -44,13 +44,13 @@ class ASTBuilder:
                 "<if-statement>": self._build_if_node,
                 "<while-statement>": self._build_while_node,
                 "<for-statement>": self._build_for_node,
-                "<repeat-statement>": self._build_repeat_node
+                "<repeat-statement>": self._build_repeat_node,
+                "<case-statement>": self._build_case_node
             }
             builder = dispatch_map.get(node.type)
             if builder:
                 return builder(node)
             else:
-                # default: flatten children
                 children_ast = [c_node for c in node.child if (c_node := self._build_node(c))]
                 if len(children_ast) == 1:
                     return children_ast[0]
@@ -307,3 +307,25 @@ class ASTBuilder:
 
         return ForNode(var_node, start_expr, end_expr, direction, body_node)
 
+    def _build_case_node(self, node):
+        expr_node = self._build_node(node.child[1])
+        case_list_node = node.child[3]
+
+        branches = []
+        i = 0
+        while i < len(case_list_node.child):
+            constants = []
+
+            while not (isinstance(case_list_node.child[i], Token) and case_list_node.child[i].type == "COLON"):
+                child_node = self._build_node(case_list_node.child[i])
+                if child_node is not None: # jujur gatau kenapa ada None
+                    constants.append(child_node)
+                i += 1
+
+            i += 1  # skip COLON
+            stmt_node = self._build_node(case_list_node.child[i])
+            i += 1
+
+            branches.append(CaseBranchNode(constants, stmt_node))
+
+        return CaseNode(expr_node, branches)
