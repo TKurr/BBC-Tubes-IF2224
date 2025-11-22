@@ -319,8 +319,19 @@ class ASTBuilder:
     def build_for_node(self, node):
         var_node = next((self.build_node(c) for c in node.child if c.type == "IDENTIFIER"), None)
         start_expr = next((self.build_node(c) for c in node.child if c.type == "<expression>"), None)
-        end_expr = next((self.build_node(c) for c in reversed(node.child) if c.type == "<expression>"), None)
-        body_node = next((self.build_node(c) for c in node.child if c.type == "<compound-statement>"), None)
-        direction_token = next((c for c in node.child if getattr(c, "value", "").lower() in ("ke", "sampai")), None)
+        direction_token = next((c for c in node.child if getattr(c, "value", "").lower() in ("ke", "turun_ke")), None)
+        end_expr = None
+        if direction_token:
+            idx = node.child.index(direction_token)
+            for c in node.child[idx+1:]:
+                if c.type == "<expression>":
+                    end_expr = self.build_node(c)
+                    break
+
+        lakukan_idx = next((i for i, c in enumerate(node.child) if getattr(c, "value", "").lower() == "lakukan"), None)
+        body_nodes = node.child[lakukan_idx+1:] if lakukan_idx is not None else []
+        body_node = self.build_statement_list(body_nodes)
+
         direction = getattr(direction_token, "value", "ke").lower() if direction_token else "ke"
+
         return ForNode(var_node, start_expr, end_expr, direction, body_node)
