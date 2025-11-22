@@ -73,8 +73,18 @@ class ASTBuilder:
         return StringNode(token.value) if token else None
 
     def build_variable_node(self, node):
-        token = next((t for t in node.child if isinstance(t, Token)), None)
-        return VarNode(token.value) if token else None
+        token = next((t for t in node.child if isinstance(t, Token) and t.type == "IDENTIFIER"), None)
+        if not token:
+            return None
+
+        var_node = VarNode(token.value)
+
+        index_node = next((c for c in node.child if c.type == "<variable-index>"), None)
+        if index_node:
+            expr_node = next((self.build_node(c) for c in index_node.child if c.type == "<expression>"), None)
+            return ArrayAccessNode(var_node, expr_node)
+
+        return var_node
 
     # ---------------------------
     # Helper for building lists
@@ -130,9 +140,29 @@ class ASTBuilder:
 
         for id_node, type_node in zip(identifiers_nodes, type_nodes):
             vartype = None
-            type_token = next((t for t in type_node.child if hasattr(t, "value")), None)
-            if type_token:
-                vartype = type_token.value
+
+            array_node = next((c for c in type_node.child if c.type == "<array-type>"), None)
+            if array_node:
+                bounds = []
+                range_node = next((c for c in array_node.child if c.type == "<range>"), None)
+                if range_node:
+                    expr_nodes = [c for c in range_node.child if c.type == "<expression>"]
+                    if len(expr_nodes) == 2:
+                        lower = self.build_node(expr_nodes[0])
+                        upper = self.build_node(expr_nodes[1])
+                        bounds.append((lower, upper))
+
+                base_type_node = next((c for c in array_node.child if c.type == "<type>"), None)
+                base_type = None
+                if base_type_node:
+                    type_token = next((t for t in base_type_node.child if isinstance(t, Token) and t.type == "KEYWORD"), None)
+                    base_type = type_token.value if type_token else None
+
+                vartype = ArrayTypeNode(base_type, bounds)
+            else:
+                type_token = next((t for t in type_node.child if hasattr(t, "value")), None)
+                if type_token:
+                    vartype = type_token.value
 
             for item in id_node.child:
                 if item.type == "IDENTIFIER":
@@ -217,8 +247,17 @@ class ASTBuilder:
         name_token = next((t for t in node.child if isinstance(t, Token) and t.type == "IDENTIFIER"), None)
         if not name_token:
             raise ASTError("Procedure call missing name", node)
-        args = [self.build_node(c) for c in node.child if c.type == "<expression>"]
+
+        param_list_node = next((c for c in node.child if c.type == "<parameter-list>"), None)
+        args = []
+        if param_list_node:
+            for expr_node in param_list_node.child:
+                built_expr = self.build_node(expr_node)
+                if built_expr:
+                    args.append(built_expr)
+
         return ProcedureCallNode(name_token.value, args)
+
 
     # ---------------------------
     # Conditional Node
