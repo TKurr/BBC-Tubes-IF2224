@@ -174,3 +174,19 @@ class CaseNode(ASTNode):
 
     def __repr__(self):
         return f"CaseNode(expr={self.expr_node}, branches={self.branches})"
+
+class ArrayTypeNode(ASTNode):
+    def __init__(self, base_type, bounds):
+        super().__init__()
+        self.base_type = base_type 
+        self.bounds = bounds      
+    def __repr__(self):
+        return f"ArrayTypeNode(base_type={self.base_type}, bounds={self.bounds})"
+
+class ArrayAccessNode(ASTNode):
+    def __init__(self, array, index):
+        self.array = array    
+        self.index = index    
+
+    def __repr__(self):
+        return f"ArrayAccessNode(array={self.array}, index={self.index})"
