@@ -91,7 +91,7 @@ class ASTBuilder:
                     prog_name = token.value
             elif c.type == "<declaration-part>":
                 decl_node = self.build_node(c)
-                decls_attr = decl_node.children if decl_node else []
+                decls_attr = [decl_node] if decl_node else []
             elif c.type == "<compound-statement>":
                 block_attr = self.build_node(c)
 
