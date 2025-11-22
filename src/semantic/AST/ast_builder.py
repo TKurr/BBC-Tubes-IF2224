@@ -77,6 +77,21 @@ class ASTBuilder:
         return VarNode(token.value) if token else None
 
     # ---------------------------
+    # Helper for building lists
+    # ---------------------------
+
+    def build_statement_list(self, nodes):
+        statements = []
+        for n in nodes:
+            node = self.build_node(n)
+            if node:
+                if isinstance(node, BlockNode):
+                    statements.extend(node.children)
+                else:
+                    statements.append(node)
+        return BlockNode(statements) if len(statements) > 1 else (statements[0] if statements else None)
+
+    # ---------------------------
     # Program / Declarations / Block
     # ---------------------------
     def build_program_node(self, node):
@@ -125,15 +140,15 @@ class ASTBuilder:
         return declarations
 
     def build_block_node(self, node):
-        stmts_nodes = [c for c in node.child if c.type not in ("KEYWORD",)]
-        stmts = []
-        for stmt in stmts_nodes:
-            stmt_node = self.build_node(stmt)
-            if isinstance(stmt_node, BlockNode):
-                stmts.extend(stmt_node.children)
-            elif stmt_node:
-                stmts.append(stmt_node)
-        return BlockNode(stmts)
+        statements_nodes = [c for c in node.child if c.type not in ("KEYWORD",)]
+        statements = []
+        for statement in statements_nodes:
+            statement_node = self.build_node(statement)
+            if isinstance(statement_node, BlockNode):
+                statements.extend(statement_node.children)
+            elif statement_node:
+                statements.append(statement_node)
+        return BlockNode(statements)
 
     # ---------------------------
     # Assignment
@@ -150,10 +165,13 @@ class ASTBuilder:
     # ---------------------------
     def build_expression_node(self, node):
         simple_exprs = [self.build_simple_expression_node(c) for c in node.child if c.type == "<simple-expression>"]
-        ops = [c for c in node.child if isinstance(c, Token) and c.type == "ARITHMETIC_OPERATOR"]
+        ops = [c for c in node.child if isinstance(c, Token) and c.type in ("ARITHMETIC_OPERATOR", "RELATIONAL_OPERATOR")]
+
         if len(simple_exprs) == 2 and ops:
             return BinOpNode(simple_exprs[0], ops[0].value, simple_exprs[1])
-        return simple_exprs[0] if simple_exprs else None
+        elif simple_exprs:
+            return simple_exprs[0]
+        return None
 
     def build_simple_expression_node(self, node):
         terms = [self.build_term_node(c) for c in node.child if c.type == "<term>"]
@@ -206,10 +224,24 @@ class ASTBuilder:
     # Conditional Node
     # ---------------------------
     def build_if_node(self, node):
-        condition = next((self.build_node(c) for c in node.child if c.type == "<expression>"), None)
-        then_block = next((self.build_node(c) for c in node.child if c.type == "<compound-statement>"), None)
-        else_block = next((self.build_node(c) for c in node.child if getattr(c, "value", "").lower() in ("selain_itu", "selain-itu")), None)
-        return IfNode(condition, then_block, else_block)
+        idx_jika = next(i for i, c in enumerate(node.child) if c.type == 'KEYWORD' and c.value.lower() == 'jika')
+        idx_maka = next(i for i, c in enumerate(node.child) if c.type == 'KEYWORD' and c.value.lower() == 'maka')
+        idx_selain_itu = next((i for i, c in enumerate(node.child) if c.type == 'KEYWORD' and c.value.lower() == 'selain_itu'), None)
+
+        expr_node = next(c for c in node.child[idx_jika + 1: idx_maka] if c.type == "<expression>")
+        condition = self.build_node(expr_node)
+
+        if idx_selain_itu:
+            then_nodes = node.child[idx_maka + 1: idx_selain_itu]
+            else_nodes = node.child[idx_selain_itu + 1:]
+        else:
+            then_nodes = node.child[idx_maka + 1:]
+            else_nodes = []
+
+        then_body = self.build_statement_list(then_nodes)
+        else_body = self.build_statement_list(else_nodes) if else_nodes else None
+
+        return IfNode(condition=condition, then_block=then_body, else_block=else_body)
 
     def build_case_node(self, node):
         expr_node = next((self.build_node(c) for c in node.child if c.type == "<expression>"), None)
@@ -218,18 +250,24 @@ class ASTBuilder:
         if case_list_node:
             for case in case_list_node.child:
                 constants = [self.build_node(c) for c in case.child if c.type != "COLON"]
-                stmt_node = next((self.build_node(c) for c in case.child if c.type != "COLON"), None)
-                branches.append(CaseBranchNode(constants, stmt_node))
+                statement_node = next((self.build_node(c) for c in case.child if c.type != "COLON"), None)
+                branches.append(CaseBranchNode(constants, statement_node))
         return CaseNode(expr_node, branches)
 
     # ---------------------------
     # Loop Node
     # ---------------------------
     def build_while_node(self, node):
-        condition = next((self.build_node(c) for c in node.child if c.type in ("<expression>", "<factor>")), None)
-        body = next((self.build_node(c) for c in node.child if c.type == "<compound-statement>"), None)
-        if not condition or not body:
-            raise ASTError("While statement incomplete", node)
+        expr_node = next((c for c in node.child if c.type == "<expression>"), None)
+        if not expr_node:
+            raise ASTError("While statement missing condition", node)
+        condition = self.build_node(expr_node)
+
+        body_candidates = [c for c in node.child if c.type not in ("KEYWORD", "<expression>")]
+        if not body_candidates:
+            raise ASTError("While statement missing body", node)
+        body = self.build_statement_list(body_candidates)
+
         return WhileNode(condition, body)
 
     def build_repeat_node(self, node):
