@@ -27,6 +27,8 @@ class ASTBuilder:
                 "<declaration-part>": self.build_declarations_node,
                 "<const-declaration>": self.build_const_decl_node,
                 "<var-declaration>": self.build_var_decl_node,
+                "<type-declaration>": self.build_type_declaration_node,  
+                "<record-type>": self.build_record_type_node,
                 "<compound-statement>": self.build_block_node,
                 "<assignment-statement>": self.build_assign_node,
                 "<expression>": self.build_expression_node,
@@ -76,18 +78,33 @@ class ASTBuilder:
         return StringNode(token.value) if token else None
 
     def build_variable_node(self, node):
-        token = next((t for t in node.child if isinstance(t, Token) and t.type == "IDENTIFIER"), None)
-        if not token:
+        base_token = next((t for t in node.child if isinstance(t, Token) and t.type == "IDENTIFIER"), None)
+        if not base_token:
             return None
 
-        var_node = VarNode(token.value)
+        current_node = VarNode(base_token.value)
 
-        index_node = next((c for c in node.child if c.type == "<variable-index>"), None)
-        if index_node:
-            expr_node = next((self.build_node(c) for c in index_node.child if c.type == "<expression>"), None)
-            return ArrayAccessNode(var_node, expr_node)
+        # Traversal child untuk field atau array index
+        i = 0
+        while i < len(node.child):
+            c = node.child[i]
 
-        return var_node
+            # DOT -> akses field
+            if isinstance(c, Token) and c.type == "DOT":
+                i += 1
+                field_token = node.child[i] if i < len(node.child) else None
+                if field_token and isinstance(field_token, Token) and field_token.type == "IDENTIFIER":
+                    current_node = RecordFieldNode(field_token.value, current_node)
+
+            # <variable-index> -> akses array
+            elif getattr(c, "type", None) == "<variable-index>":
+                expr_node = next((self.build_node(x) for x in c.child if getattr(x, "type", None) == "<expression>"), None)
+                if expr_node:
+                    current_node = ArrayAccessNode(current_node, expr_node)
+
+            i += 1
+
+        return current_node
 
     # ---------------------------
     # Helper for building lists
@@ -173,35 +190,91 @@ class ASTBuilder:
         type_nodes = [c for c in node.child if c.type == "<type>"]
 
         for id_node, type_node in zip(identifiers_nodes, type_nodes):
-            vartype = None
-
-            array_node = next((c for c in type_node.child if c.type == "<array-type>"), None)
-            if array_node:
-                bounds = []
-                range_node = next((c for c in array_node.child if c.type == "<range>"), None)
-                if range_node:
-                    expr_nodes = [c for c in range_node.child if c.type == "<expression>"]
-                    if len(expr_nodes) == 2:
-                        lower = self.build_node(expr_nodes[0])
-                        upper = self.build_node(expr_nodes[1])
-                        bounds.append((lower, upper))
-
-                base_type_node = next((c for c in array_node.child if c.type == "<type>"), None)
-                base_type = None
-                if base_type_node:
-                    type_token = next((t for t in base_type_node.child if isinstance(t, Token) and t.type == "KEYWORD"), None)
-                    base_type = type_token.value if type_token else None
-
-                vartype = ArrayTypeNode(base_type, bounds)
-            else:
-                type_token = next((t for t in type_node.child if hasattr(t, "value")), None)
-                if type_token:
-                    vartype = type_token.value
+            vartype = self.build_type_definition_node(type_node)
 
             for item in id_node.child:
                 if item.type == "IDENTIFIER":
                     declarations.append(VarDeclNode(item.value, vartype))
         return declarations
+
+    def build_type_definition_node(self, node):
+        if node is None:
+            return None
+
+        # Token langsung
+        if isinstance(node, Token):
+            if node.type in ("IDENTIFIER", "KEYWORD"):
+                return node.value
+            return None
+
+        # Tangani range: <expression> RANGE_OPERATOR(..) <expression>
+        expr_nodes = [c for c in getattr(node, "child", []) if getattr(c, "type", None) == "<expression>"]
+        range_op = next((c for c in getattr(node, "child", []) if isinstance(c, Token) and c.type == "RANGE_OPERATOR"), None)
+        if len(expr_nodes) == 2 and range_op:
+            lower = self.build_node(expr_nodes[0])
+            upper = self.build_node(expr_nodes[1])
+            return RangeTypeNode(lower, upper)
+
+        # Tangani record / array / primitive seperti sebelumnya
+        for c in getattr(node, "child", []):
+            if getattr(c, "type", None) == "<record-type>":
+                return self.build_record_type_node(c)
+            if getattr(c, "type", None) == "<array-type>":
+                # sama seperti sebelumnya
+                bounds = []
+                range_node = next((x for x in c.child if getattr(x,"type",None)=="<range>"), None)
+                if range_node:
+                    lower = self.build_node(range_node.child[0])
+                    upper = self.build_node(range_node.child[2]) 
+
+                    bounds.append((lower, upper))
+                base_type_node = next((x for x in c.child if getattr(x,"type",None)=="<type>"), None)
+                base_type = self.build_type_definition_node(base_type_node) if base_type_node else None
+                return ArrayTypeNode(base_type, bounds)
+            if isinstance(c, Token) and c.type in ("IDENTIFIER","KEYWORD"):
+                return c.value
+            # rekursif
+            res = self.build_type_definition_node(c)
+            if res:
+                return res
+
+        return None
+
+    def build_type_declaration_node(self, node):
+        type_decls = []
+        if not hasattr(self, "type_table"):
+            self.type_table = {}
+        i = 0
+        while i < len(node.child):
+            if node.child[i].type == "IDENTIFIER" and i+2 < len(node.child):
+                identifier = node.child[i].value
+                if node.child[i+1].type == "RELATIONAL_OPERATOR" and node.child[i+1].value == "=":
+                    type_def_node = node.child[i+2]
+                    type_def = self.build_type_definition_node(type_def_node)
+                    type_decl = TypeDeclarationNode(identifier, type_def)
+                    type_decls.append(type_decl)
+                    self.type_table[identifier] = type_def  # simpan di type table
+                    i += 3
+                    if i < len(node.child) and node.child[i].type == "SEMICOLON":
+                        i += 1
+                    continue
+            i += 1
+        return type_decls
+
+    def build_record_type_node(self, node):
+        fields = []
+        for group in node.child:
+            if group.type == "<parameter-group>":
+                id_list_node = next((c for c in group.child if c.type == "<identifier-list>"), None)
+                ids = [t.value for t in getattr(id_list_node, "child", []) if isinstance(t, Token) and t.type == "IDENTIFIER"] if id_list_node else []
+
+                type_node = next((c for c in group.child if c.type == "<type>"), None)
+                field_type = self.build_type_definition_node(type_node) if type_node else None
+
+                for name in ids:
+                    fields.append(RecordFieldNode(name, field_type))
+
+        return RecordTypeNode(fields)
 
     def build_block_node(self, node):
         statements_nodes = [c for c in node.child if c.type not in ("KEYWORD",)]
@@ -214,14 +287,35 @@ class ASTBuilder:
                 statements.append(statement_node)
         return BlockNode(statements)
 
+    def build_variable_access(self, node):
+        base_token = next((t for t in node.child if isinstance(t, Token) and t.type == "IDENTIFIER"), None)
+        if not base_token:
+            return None
+        current_node = VarNode(base_token.value)
+
+        i = 0
+        while i < len(node.child):
+            c = node.child[i]
+            if c.type == "<variable-index>":
+                expr_node = next((self.build_node(x) for x in c.child if x.type == "<expression>"), None)
+                current_node = ArrayAccessNode(current_node, expr_node)
+            elif isinstance(c, Token) and c.type == "DOT":
+                i += 1
+                field_token = node.child[i] if i < len(node.child) else None
+                if field_token and isinstance(field_token, Token) and field_token.type == "IDENTIFIER":
+                    current_node = RecordFieldNode(field_token.value, current_node)
+            i += 1
+
+        return current_node
+
     # ---------------------------
     # Assignment
     # ---------------------------
     def build_assign_node(self, node):
         target_node = next((self.build_node(c) for c in node.child if c.type == "<variable>"), None)
         value_node = next((self.build_node(c) for c in node.child if c.type == "<expression>"), None)
-        # if not target_node or not value_node:
-        #     raise ASTError("Assignment statement incomplete", node)
+        if not target_node or not value_node:
+            raise ASTError("Assignment statement incomplete", node)
         return AssignNode(target_node, value_node)
 
     # ---------------------------
@@ -258,21 +352,32 @@ class ASTBuilder:
         return current
 
     def build_factor_node(self, node):
-        # unary, parentheses, terminal
-        if len(node.child) == 1:
-            t = node.child[0]
-            if isinstance(t, Token):
-                return self.build_token(t)
-            else:
-                return self.build_node(t)
-        elif any(getattr(c, "value", "").lower() == "tidak" for c in node.child):
+        # Unary tidak
+        if any(getattr(c, "value", "").lower() == "tidak" for c in node.child):
             factor = next((self.build_factor_node(c) for c in node.child if getattr(c, "value", "").lower() != "tidak"), None)
             return UnaryOpNode("tidak", factor)
-        elif any(c.type == "LPARENTHESIS" for c in node.child):
-            expr = next((self.build_expression_node(c) for c in node.child if c.type == "<expression>"), None)
+        
+        # Boolean literal
+        token = next((t for t in node.child if isinstance(t, Token) and t.type == "KEYWORD" and t.value.lower() in ("true","false")), None)
+        if token:
+            return BooleanNode(token.value.lower() == "true")
+        
+        # Jika ada logical operator (dan/or)
+        logical_ops = [t for t in node.child if isinstance(t, Token) and t.type == "LOGICAL_OPERATOR"]
+        if logical_ops:
+            left = self.build_factor_node(node.child[0])
+            for i, op in enumerate(logical_ops):
+                right = self.build_factor_node(node.child[i+1])
+                left = BinOpNode(left, op.value.lower(), right)
+            return left
+
+        # Parentheses
+        if any(c.type == "LPARENTHESIS" for c in node.child):
+            expr = next((self.build_expression_node(c) for c in node.child if getattr(c,"type",None)=="<expression>"), None)
             return expr
-        else:
-            return self.build_node(node.child[0])
+
+        # Default fallback
+        return self.build_node(node.child[0])
 
     # ---------------------------
     # Function / Procedure
@@ -379,14 +484,33 @@ class ASTBuilder:
         return IfNode(condition=condition, then_block=then_body, else_block=else_body)
 
     def build_case_node(self, node):
-        expr_node = next((self.build_node(c) for c in node.child if c.type == "<expression>"), None)
-        case_list_node = next((c for c in node.child if c.type == "<case-list>"), None)
+        expr_node = next((self.build_node(c) for c in node.child if getattr(c,"type",None)=="<expression>"), None)
+
+        case_list_node = next((c for c in node.child if getattr(c,"type",None)=="<case-list>"), None)
         branches = []
+
         if case_list_node:
-            for case in case_list_node.child:
-                constants = [self.build_node(c) for c in case.child if c.type != "COLON"]
-                statement_node = next((self.build_node(c) for c in case.child if c.type != "COLON"), None)
-                branches.append(CaseBranchNode(constants, statement_node))
+            i = 0
+            children = case_list_node.child
+            while i < len(children):
+                # ambil value case
+                value_token = children[i]
+                value_node = self.build_node(value_token) if hasattr(value_token, "type") else None
+                i += 1
+
+                # skip COLON
+                if i < len(children) and isinstance(children[i], Token) and children[i].type == "COLON":
+                    i += 1
+
+                # ambil statement setelah colon
+                stmt_nodes = []
+                while i < len(children) and not (isinstance(children[i], Token) and children[i].type in ("NUMBER", "IDENTIFIER")):
+                    stmt_nodes.append(children[i])
+                    i += 1
+
+                stmt_node = self.build_statement_list(stmt_nodes)
+                branches.append(CaseBranchNode([value_node], stmt_node))
+
         return CaseNode(expr_node, branches)
 
     # ---------------------------

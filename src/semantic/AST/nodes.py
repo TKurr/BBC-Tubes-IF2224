@@ -51,6 +51,16 @@ class VarDeclNode(ASTNode):
     def __repr__(self):
         return f"VarDeclNode(name='{self.name}', type='{self.vartype}')"
 
+class TypeDeclarationNode(ASTNode):
+    def __init__(self, name, type_node):
+        super().__init__()
+        self.name = name
+        self.type_node = type_node
+        self.children.append(type_node)
+
+    def __repr__(self):
+        return f"TypeDeclarationNode(name='{self.name}', type={self.type_node})"
+
 class AssignNode(ASTNode):
     def __init__(self, target, value):
         super().__init__()
@@ -84,6 +94,13 @@ class StringNode(ASTNode):
 
     def __repr__(self):
         return f"StringNode({self.value})"
+
+class BooleanNode:
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return f"BooleanNode({self.value})"
 
 class UnaryOpNode(ASTNode):
     def __init__(self, op, operand):
@@ -227,3 +244,30 @@ class ArrayAccessNode(ASTNode):
 
     def __repr__(self):
         return f"ArrayAccessNode(array={self.array}, index={self.index})"
+
+class RecordFieldNode(ASTNode):
+    def __init__(self, name, type_):
+        super().__init__()
+        self.name = name
+        self.type_ = type_
+
+    def __repr__(self):
+        return f"RecordFieldNode(name='{self.name}', type='{self.type_}')"
+
+class RecordTypeNode(ASTNode):
+    def __init__(self, fields=None):
+        super().__init__()
+        self.fields = fields or []
+        self.children.extend(self.fields)
+
+    def __repr__(self):
+        return f"RecordTypeNode(fields={self.fields})"
+
+class RangeTypeNode(ASTNode):
+    def __init__(self, lower, upper):
+        super().__init__()
+        self.lower = lower
+        self.upper = upper
+
+    def __repr__(self):
+        return f"RangeTypeNode({self.lower}-{self.upper})"
