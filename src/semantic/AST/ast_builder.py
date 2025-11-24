@@ -25,6 +25,7 @@ class ASTBuilder:
                 "<program>": self.build_program_node,
                 "<program-header>": lambda n: None,
                 "<declaration-part>": self.build_declarations_node,
+                "<const-declaration>": self.build_const_decl_node,
                 "<var-declaration>": self.build_var_decl_node,
                 "<compound-statement>": self.build_block_node,
                 "<assignment-statement>": self.build_assign_node,
@@ -32,7 +33,9 @@ class ASTBuilder:
                 "<simple-expression>": self.build_simple_expression_node,
                 "<term>": self.build_term_node,
                 "<factor>": self.build_factor_node,
-                "<procedure/function-call>": self.build_procedure_call_node,
+                "<procedure-declaration>": self.build_procedure_decl_node,
+                "<function-declaration>": self.build_function_decl_node,
+                "<procedure/function-call>": self.build_procedure_function_call_node,
                 "<variable>": self.build_variable_node,
                 "<number>": self.build_number_node,
                 "<string-literal>": self.build_string_node,
@@ -133,6 +136,37 @@ class ASTBuilder:
                     decls.append(child_decl)
         return DeclarationsNode(decls)
 
+    def build_const_decl_node(self, node):
+        consts = []
+        i = 0
+        children = node.child
+
+        while i < len(children):
+            c = children[i]
+            if isinstance(c, Token) and c.type == "IDENTIFIER":
+                name = c.value
+                j = i + 1
+                while j < len(children) and children[j].type != "<expression>":
+                    j += 1
+                expr_node = None
+                if j < len(children) and children[j].type == "<expression>":
+                    expr_node = self.build_node(children[j])
+                else:
+                    expr_node = None
+
+                const_node = ConstDeclNode(name, expr_node)
+                consts.append(const_node)
+
+                k = j + 1
+                while k < len(children) and not (isinstance(children[k], Token) and children[k].type == "SEMICOLON"):
+                    k += 1
+                i = k + 1
+                continue
+
+            i += 1
+
+        return consts
+
     def build_var_decl_node(self, node):
         declarations = []
         identifiers_nodes = [c for c in node.child if c.type == "<identifier-list>"]
@@ -186,8 +220,8 @@ class ASTBuilder:
     def build_assign_node(self, node):
         target_node = next((self.build_node(c) for c in node.child if c.type == "<variable>"), None)
         value_node = next((self.build_node(c) for c in node.child if c.type == "<expression>"), None)
-        if not target_node or not value_node:
-            raise ASTError("Assignment statement incomplete", node)
+        # if not target_node or not value_node:
+        #     raise ASTError("Assignment statement incomplete", node)
         return AssignNode(target_node, value_node)
 
     # ---------------------------
@@ -241,9 +275,71 @@ class ASTBuilder:
             return self.build_node(node.child[0])
 
     # ---------------------------
-    # Procedure call
+    # Function / Procedure
     # ---------------------------
-    def build_procedure_call_node(self, node):
+    def build_param_list(self, node):
+        params = []
+
+        if node is None:
+            return params
+
+        for child in node.child:
+            if child.type == "<parameter-group>":
+                # Ambil identifier list
+                id_list_node = next((c for c in child.child if c.type == "<identifier-list>"), None)
+                ids = [t.value for t in id_list_node.child if isinstance(t, Token) and t.type == "IDENTIFIER"] if id_list_node else []
+
+                # Ambil tipe
+                type_node = next((c for c in child.child if c.type == "<type>"), None)
+                vartype = None
+                if type_node:
+                    t = next((tk for tk in type_node.child if hasattr(tk, "value")), None)
+                    vartype = t.value if t else None
+
+                for name in ids:
+                    params.append(ParamNode(name, vartype))
+
+        return params
+
+    def build_procedure_decl_node(self, node):
+        # Nama prosedur
+        name_token = next((t for t in node.child if isinstance(t, Token) and t.type == "IDENTIFIER"), None)
+        name = name_token.value
+
+        # Parameter list
+        param_list_node = next((c for c in node.child if c.type == "<formal-parameter-list>"), None)
+        params = self.build_param_list(param_list_node)
+
+        # Block (isi prosedur)
+        block_node = next((c for c in node.child if c.type in ("<block>", "<compound-statement>")), None)
+        block = self.build_node(block_node)
+
+        return ProcedureDeclNode(name, params, block)
+
+
+    def build_function_decl_node(self, node):
+        # Nama function
+        name_token = next((t for t in node.child if isinstance(t, Token) and t.type == "IDENTIFIER"), None)
+        name = name_token.value
+
+        # Parameter list
+        param_list_node = next((c for c in node.child if c.type == "<formal-parameter-list>"), None)
+        params = self.build_param_list(param_list_node)
+
+        # Return type
+        type_node = next((c for c in node.child if c.type == "<type>"), None)
+        return_type = None
+        if type_node:
+            t = next((tk for tk in type_node.child if hasattr(tk, "value")), None)
+            return_type = t.value if t else None
+
+        # Function body (block)
+        block_node = next((c for c in node.child if c.type in ("<block>", "<compound-statement>")), None)
+        block = self.build_node(block_node)
+
+        return FunctionDeclNode(name, params, return_type, block)
+
+    def build_procedure_function_call_node(self, node):
         name_token = next((t for t in node.child if isinstance(t, Token) and t.type == "IDENTIFIER"), None)
         if not name_token:
             raise ASTError("Procedure call missing name", node)
@@ -256,7 +352,7 @@ class ASTBuilder:
                 if built_expr:
                     args.append(built_expr)
 
-        return ProcedureCallNode(name_token.value, args)
+        return ProcedureFunctionCallNode(name_token.value, args)
 
 
     # ---------------------------

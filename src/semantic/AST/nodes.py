@@ -22,7 +22,7 @@ class BlockNode(ASTNode):
         self.children.extend(self.statements)
 
     def __repr__(self):
-        return "BlockNode"
+        return f"BlockNode"
 
 class DeclarationsNode(ASTNode):
     def __init__(self, declarations=None):
@@ -32,6 +32,15 @@ class DeclarationsNode(ASTNode):
 
     def __repr__(self):
         return "DeclarationsNode"
+
+class ConstDeclNode(ASTNode):
+    def __init__(self, name, consttype):
+        super().__init__()
+        self.name = name
+        self.consttype = consttype
+
+    def __repr__(self):
+        return f"ConstDeclNode(name='{self.name}', type='{self.consttype}')"
 
 class VarDeclNode(ASTNode):
     def __init__(self, name, vartype):
@@ -97,7 +106,35 @@ class BinOpNode(ASTNode):
     def __repr__(self):
         return f"BinOpNode(op='{self.op}', left={self.left}, right={self.right})"
 
-class ProcedureCallNode(ASTNode):
+class ProcedureDeclNode(ASTNode):
+    def __init__(self, name, params, block):
+        self.name = name              
+        self.params = params          
+        self.block = block            
+
+    def __repr__(self):
+        return f"ProcedureDeclNode(params='{self.params}', block='{self.block}')"
+
+class FunctionDeclNode(ASTNode):
+    def __init__(self, name, params, return_type, block):
+        self.name = name              
+        self.params = params      
+        self.return_type = return_type    
+        self.block = block            
+
+    def __repr__(self):
+        return f"FunctonDeclNode(params='{self.params}', block='{self.block}', return_type='{self.return_type}')"
+
+class ParamNode(ASTNode):
+    def __init__(self, names, type_node):
+        super().__init__()
+        self.names = names            
+        self.type_node = type_node    
+    
+    def __repr__(self):
+        return f"ParamNode(names='{self.names}', type='{self.type_node}')"
+
+class ProcedureFunctionCallNode(ASTNode):
     def __init__(self, name, args=None):
         super().__init__()
         self.name = name
@@ -105,7 +142,7 @@ class ProcedureCallNode(ASTNode):
         self.children.extend(self.args)
 
     def __repr__(self):
-        return f"ProcedureCallNode(name='{self.name}', args={self.args})"
+        return f"ProcedureFunctionCallNode(name='{self.name}', args={self.args})"
 
 class IfNode(ASTNode):
     def __init__(self, condition, then_block, else_block=None):
