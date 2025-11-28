@@ -11,8 +11,8 @@ from src.utils import read_file, write_file, format_output, print_usage
 from src.parser.parser import Parser
 from src.semantic.AST.ast_node import ASTNode
 from src.semantic.AST.ast_builder import ASTBuilder
-from src.semantic.semantic_analyzer import SemanticAnalyzer
-from src.semantic.symbol.display_table import display_tab, display_atab, display_btab
+from src.semantic.symbol.symbol_table import SymbolTable
+# from src.semantic.semantic_analyzer import SemanticAnalyzer
 
 def print_ast(node, indent=0):
     prefix = "  " * indent
