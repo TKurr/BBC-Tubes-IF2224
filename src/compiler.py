@@ -1,5 +1,7 @@
 import os
 import sys
+import traceback
+
 from pathlib import Path
 from src.lexer.lexer import Lexer
 from src.dfa.dfa_engine import DFAEngine
@@ -7,7 +9,7 @@ from src.dfa.dfa_config import DFAConfigLoader
 from src.lexer.lexer_config import LexerConfigLoader
 from src.lexer.lexical_error import LexicalError
 from src.parser.parse_error import ParseError
-from src.utils import read_file, write_file, format_output, print_usage
+from src.utils import read_file, write_file, format_output, print_usage, symbol_table_to_str
 from src.parser.parser import Parser
 from src.semantic.AST.ast_node import ASTNode
 from src.semantic.AST.ast_builder import ASTBuilder
@@ -16,6 +18,8 @@ from src.semantic.semantic_analyzer import SemanticAnalyzer
 from src.semantic.errors import SemanticError
 
 def compiler():
+    symbol_table_str = None
+
     if len(sys.argv) != 2:
         print_usage()
         sys.exit(1)
@@ -88,6 +92,7 @@ def compiler():
             success, errors = analyzer.analyze(ast_root)
 
             analyzer.symbol_table.print_tables()
+            symbol_table_str = symbol_table_to_str(analyzer.symbol_table)
 
             print("\n================================= DECORATED AST =================================\n")
             print(ast_root)
@@ -106,12 +111,11 @@ def compiler():
         sys.exit(1)
     except Exception as e:
         print(f"[AST Builder Error] {str(e)}")
-        import traceback
         traceback.print_exc()
         sys.exit(1)
 
     #output
-    output = format_output(ast_root, root,tokens,dir_output)
+    output = format_output(ast_root, root, tokens, dir_output, symbol_table=symbol_table_str)
     lexer_relative_path = '/'.join(['test',dir_output,'output','output.txt'])
     lexer_output_path = os.path.join(BASE_DIR, lexer_relative_path)
     write_file(output,lexer_output_path)
