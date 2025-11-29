@@ -40,13 +40,15 @@ class ConstDeclNode(ASTNode):
         self.consttype = consttype
 
     def __repr__(self):
-        return f"ConstDecl(name='{self.name}', type='{self.consttype}')"
+        return f"ConstDecl(name='{self.name}')"
 
 class VarDeclNode(ASTNode):
     def __init__(self, name, vartype):
         super().__init__()
         self.name = name
         self.vartype = vartype
+        if isinstance(vartype, ASTNode):
+            self.children.append(vartype)
 
     def __repr__(self):
         return f"VarDecl('{self.name}')"
@@ -137,8 +139,11 @@ class ProcedureDeclNode(ASTNode):
         self.params = params
         self.block = block
 
+        self.children.extend(self.params)
+        self.children.append(self.block)
+
     def __repr__(self):
-        return f"ProcedureDecl(params='{self.params}', block='{self.block}')"
+        return f"ProcedureDecl(name='{self.name}')"
 
 class FunctionDeclNode(ASTNode):
     def __init__(self, name, params, return_type, block):
@@ -148,8 +153,11 @@ class FunctionDeclNode(ASTNode):
         self.return_type = return_type
         self.block = block
 
+        self.children.extend(self.params)
+        self.children.append(self.block)
+
     def __repr__(self):
-        return f"FunctonDecl(params='{self.params}', block='{self.block}', return_type='{self.return_type}')"
+        return f"FunctionDecl(name='{self.name}')"
 
 class ParamNode(ASTNode):
     def __init__(self, names, type_node, is_var=False):
@@ -182,7 +190,7 @@ class IfNode(ASTNode):
             self.children.append(else_block)
 
     def __repr__(self):
-        return f"If(condition={self.condition}, then={self.then_block}, else={self.else_block})"
+        return "If Condition"
 
 class WhileNode(ASTNode):
     def __init__(self, condition, body):
@@ -192,7 +200,7 @@ class WhileNode(ASTNode):
         self.children.extend([condition, body])
 
     def __repr__(self):
-        return f"While(condition={self.condition}, body={self.body})"
+        return f"While Loop"
 
 class RepeatNode(ASTNode):
     def __init__(self, body, condition):
@@ -202,7 +210,7 @@ class RepeatNode(ASTNode):
         self.children.extend([body, condition])
 
     def __repr__(self):
-        return f"Repeat(body={self.body}, until={self.condition})"
+        return f"Repeat Until"
 
 class ForNode(ASTNode):
     def __init__(self, var_node, start_expr, end_expr, direction, body):
@@ -215,7 +223,8 @@ class ForNode(ASTNode):
         self.children.extend([var_node, start_expr, end_expr, body])
 
     def __repr__(self):
-        return f"For({self.var_node} := {self.start_expr} {self.direction} {self.end_expr}, body={self.body})"
+        varname = getattr(self.var_node, 'name', 'var')
+        return f"For Loop"
 
 class CaseBranchNode(ASTNode):
     def __init__(self, constants, statement):
@@ -225,8 +234,9 @@ class CaseBranchNode(ASTNode):
         self.children.extend(constants + [statement])
 
     def __repr__(self):
-        consts = ", ".join(str(c) for c in self.constants)
-        return f"CaseBranch([{consts}] => {self.statement})"
+        consts = ", ".join(str(c.value) if hasattr(c, 'value') else str(c) for c in self.constants)
+        stmt_type = type(self.statement).__name__
+        return f"CaseBranch([{consts}] => {stmt_type})"
 
 class CaseNode(ASTNode):
     def __init__(self, expr_node, branches):
@@ -237,7 +247,8 @@ class CaseNode(ASTNode):
         self.children.extend(branches)
 
     def __repr__(self):
-        return f"Case(expr={self.expr_node}, branches={self.branches})"
+        expr_type = type(self.expr_node).__name__
+        return f"Case(expr={expr_type}, branches={len(self.branches)})"
 
 class ArrayTypeNode(ASTNode):
     def __init__(self, base_type, bounds):
@@ -250,11 +261,25 @@ class ArrayTypeNode(ASTNode):
 class ArrayAccessNode(ASTNode):
     def __init__(self, array, index):
         super().__init__()
-        self.array = array
+        self.array = array 
         self.index = index
+        self.children.extend([array, index])
 
     def __repr__(self):
-        return f"ArrayAccess(array={self.array}, index={self.index})"
+        if hasattr(self.array, 'name'):
+            array_name = self.array.name
+        elif isinstance(self.array, ArrayAccessNode):
+            array_name = repr(self.array)
+        else:
+            array_name = "array"
+
+        if hasattr(self.index, 'value'):
+            index_val = self.index.value
+        else:
+            index_val = "index"
+
+        return f"Array Variable(array={array_name}, index={index_val})"
+
 
 class RecordFieldNode(ASTNode):
     def __init__(self, name, type_):
@@ -277,8 +302,11 @@ class RecordTypeNode(ASTNode):
 class RangeTypeNode(ASTNode):
     def __init__(self, lower, upper):
         super().__init__()
-        self.lower = lower
-        self.upper = upper
+        self.lower = lower  
+        self.upper = upper  
+        self.children.extend([lower, upper])  
 
     def __repr__(self):
-        return f"RangeType({self.lower}-{self.upper})"
+        lval = self.lower.value if hasattr(self.lower, 'value') else self.lower
+        uval = self.upper.value if hasattr(self.upper, 'value') else self.upper
+        return f"RangeType({lval}-{uval})"

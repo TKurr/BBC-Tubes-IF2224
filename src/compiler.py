@@ -15,18 +15,6 @@ from src.semantic.symbol.symbol_table import SymbolTable
 from src.semantic.semantic_analyzer import SemanticAnalyzer
 from src.semantic.errors import SemanticError
 
-def print_ast(node, indent=0):
-    """Print plain AST without decorations"""
-    prefix = "  " * indent
-
-    if isinstance(node, ASTNode):
-        print(f"{prefix}{repr(node)}")
-
-        for child in getattr(node, 'children', []):
-            print_ast(child, indent + 1)
-    else:
-        print(f"{prefix}{node}")
-
 def compiler():
     if len(sys.argv) != 2:
         print_usage()
