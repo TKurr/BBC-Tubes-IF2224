@@ -103,6 +103,7 @@ class StringNode(ASTNode):
 
 class BooleanNode:
     def __init__(self, value):
+        super().__init__()
         self.value = value
 
     def __repr__(self):
@@ -131,6 +132,7 @@ class BinOpNode(ASTNode):
 
 class ProcedureDeclNode(ASTNode):
     def __init__(self, name, params, block):
+        super().__init__()
         self.name = name
         self.params = params
         self.block = block
@@ -140,6 +142,7 @@ class ProcedureDeclNode(ASTNode):
 
 class FunctionDeclNode(ASTNode):
     def __init__(self, name, params, return_type, block):
+        super().__init__()
         self.name = name
         self.params = params
         self.return_type = return_type
@@ -246,6 +249,7 @@ class ArrayTypeNode(ASTNode):
 
 class ArrayAccessNode(ASTNode):
     def __init__(self, array, index):
+        super().__init__()
         self.array = array
         self.index = index
 
