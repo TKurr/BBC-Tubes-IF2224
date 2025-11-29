@@ -12,7 +12,8 @@ from src.parser.parser import Parser
 from src.semantic.AST.ast_node import ASTNode
 from src.semantic.AST.ast_builder import ASTBuilder
 from src.semantic.symbol.symbol_table import SymbolTable
-# from src.semantic.semantic_analyzer import SemanticAnalyzer
+from src.semantic.semantic_analyzer import SemanticAnalyzer
+from src.semantic.errors import SemanticError
 
 def print_ast(node, indent=0):
     prefix = "  " * indent
@@ -93,10 +94,29 @@ def compiler():
             keywords_path = Path("src/config/token_maps.json")
             ast_builder = ASTBuilder(root)
             ast_root = ast_builder.build()  
+            print("\n===== ABSTRACT SYNTAX TREE =====\n")
             print_ast(ast_root)
+            
+            print("\n===== SEMANTIC ANALYSIS =====\n")
+            analyzer = SemanticAnalyzer()
+            success, errors = analyzer.analyze(ast_root)
+            
+            if not success:
+                print("Semantic errors found:")
+                for error in errors:
+                    print(f"  - {error}")
+                sys.exit(1)
+            else:
+                print("[OK] Semantic analysis passed!")
+                print(f"[OK] Symbol table created with {len(analyzer.symbol_table.tab)} entries")
 
+    except SemanticError as e:
+        print(f"[Semantic Error] {str(e)}")
+        sys.exit(1)
     except Exception as e:
         print(f"[AST Builder Error] {str(e)}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
     
     #output
