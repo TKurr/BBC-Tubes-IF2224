@@ -16,6 +16,7 @@ from src.semantic.semantic_analyzer import SemanticAnalyzer
 from src.semantic.errors import SemanticError
 
 def print_ast(node, indent=0):
+    """Print plain AST without decorations"""
     prefix = "  " * indent
 
     if isinstance(node, ASTNode):
@@ -25,7 +26,6 @@ def print_ast(node, indent=0):
             print_ast(child, indent + 1)
     else:
         print(f"{prefix}{node}")
-
 
 def compiler():
     if len(sys.argv) != 2:
@@ -95,15 +95,14 @@ def compiler():
             ast_builder = ASTBuilder(root)
             ast_root = ast_builder.build()
 
-            print("\n===== SEMANTIC ANALYSIS =====\n")
+            print("\n=============== SEMANTIC ANALYSIS ===============")
             analyzer = SemanticAnalyzer()
             success, errors = analyzer.analyze(ast_root)
 
-            print("\n[DEBUG] DUMPING SYMBOL TABLE:")
             analyzer.symbol_table.print_tables()
 
-            print("\n===== ABSTRACT SYNTAX TREE =====\n")
-            print_ast(ast_root)
+            print("\n===== DECORATED ABSTRACT SYNTAX TREE =====\n")
+            print(ast_root)
 
             if not success:
                 print("Semantic errors found:")
@@ -111,7 +110,7 @@ def compiler():
                     print(f"  - {error}")
                 sys.exit(1)
             else:
-                print("[OK] Semantic analysis passed!")
+                print("\n[OK] Semantic analysis passed!")
                 print(f"[OK] Symbol table created with {len(analyzer.symbol_table.tab)} entries")
 
     except SemanticError as e:

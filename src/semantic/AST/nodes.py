@@ -13,7 +13,7 @@ class ProgramNode(ASTNode):
             self.children.append(self.block)
 
     def __repr__(self):
-        return f"ProgramNode(name='{self.name}')"
+        return f"ProgramNode(name: '{self.name}')"
 
 class BlockNode(ASTNode):
     def __init__(self, statements=None):
@@ -22,7 +22,7 @@ class BlockNode(ASTNode):
         self.children.extend(self.statements)
 
     def __repr__(self):
-        return f"BlockNode"
+        return f"Block"
 
 class DeclarationsNode(ASTNode):
     def __init__(self, declarations=None):
@@ -31,7 +31,7 @@ class DeclarationsNode(ASTNode):
         self.children.extend(self.declarations)
 
     def __repr__(self):
-        return "DeclarationsNode"
+        return "Declarations"
 
 class ConstDeclNode(ASTNode):
     def __init__(self, name, consttype):
@@ -40,7 +40,7 @@ class ConstDeclNode(ASTNode):
         self.consttype = consttype
 
     def __repr__(self):
-        return f"ConstDeclNode(name='{self.name}', type='{self.consttype}')"
+        return f"ConstDecl(name='{self.name}', type='{self.consttype}')"
 
 class VarDeclNode(ASTNode):
     def __init__(self, name, vartype):
@@ -49,7 +49,7 @@ class VarDeclNode(ASTNode):
         self.vartype = vartype
 
     def __repr__(self):
-        return f"VarDeclNode(name='{self.name}', type='{self.vartype}')"
+        return f"VarDecl(name='{self.name}')"
 
 class TypeDeclarationNode(ASTNode):
     def __init__(self, name, type_node):
@@ -59,7 +59,7 @@ class TypeDeclarationNode(ASTNode):
         self.children.append(type_node)
 
     def __repr__(self):
-        return f"TypeDeclarationNode(name='{self.name}', type={self.type_node})"
+        return f"TypeDecl(name='{self.name}')"
 
 class AssignNode(ASTNode):
     def __init__(self, target, value):
@@ -69,7 +69,13 @@ class AssignNode(ASTNode):
         self.children.extend([target, value])
 
     def __repr__(self):
-        return f"AssignNode(target={self.target}, value={self.value})"
+        # buat VarNode (ambil nama)
+        t_str = self.target.name if hasattr(self.target, 'name') else "target"
+
+        # buat NumNode (ambil value)
+        v_str = self.value.value if hasattr(self.value, 'value') else "expr"
+
+        return f"Assign('{t_str}' := {v_str})"
 
 class VarNode(ASTNode):
     def __init__(self, name):
@@ -77,7 +83,7 @@ class VarNode(ASTNode):
         self.name = name
 
     def __repr__(self):
-        return f"VarNode('{self.name}')"
+        return f"Var('{self.name}')"
 
 class NumNode(ASTNode):
     def __init__(self, value):
@@ -85,7 +91,7 @@ class NumNode(ASTNode):
         self.value = value
 
     def __repr__(self):
-        return f"NumNode({self.value})"
+        return f"Num ({self.value})"
 
 class StringNode(ASTNode):
     def __init__(self, value):
@@ -93,14 +99,14 @@ class StringNode(ASTNode):
         self.value = value
 
     def __repr__(self):
-        return f"StringNode({self.value})"
+        return f"String ({self.value})"
 
 class BooleanNode:
     def __init__(self, value):
         self.value = value
 
     def __repr__(self):
-        return f"BooleanNode({self.value})"
+        return f"Boolean ({self.value})"
 
 class UnaryOpNode(ASTNode):
     def __init__(self, op, operand):
@@ -110,7 +116,7 @@ class UnaryOpNode(ASTNode):
         self.children.append(operand)
 
     def __repr__(self):
-        return f"UnaryOpNode(op='{self.op}', operand={self.operand})"
+        return f"UnaryOp(op='{self.op}')"
 
 class BinOpNode(ASTNode):
     def __init__(self, left, op, right):
@@ -121,7 +127,7 @@ class BinOpNode(ASTNode):
         self.children.extend([left, right])
 
     def __repr__(self):
-        return f"BinOpNode(op='{self.op}', left={self.left}, right={self.right})"
+        return f"BinOp('{self.op}')"
 
 class ProcedureDeclNode(ASTNode):
     def __init__(self, name, params, block):
@@ -130,7 +136,7 @@ class ProcedureDeclNode(ASTNode):
         self.block = block
 
     def __repr__(self):
-        return f"ProcedureDeclNode(params='{self.params}', block='{self.block}')"
+        return f"ProcedureDecl(params='{self.params}', block='{self.block}')"
 
 class FunctionDeclNode(ASTNode):
     def __init__(self, name, params, return_type, block):
@@ -140,7 +146,7 @@ class FunctionDeclNode(ASTNode):
         self.block = block
 
     def __repr__(self):
-        return f"FunctonDeclNode(params='{self.params}', block='{self.block}', return_type='{self.return_type}')"
+        return f"FunctonDecl(params='{self.params}', block='{self.block}', return_type='{self.return_type}')"
 
 class ParamNode(ASTNode):
     def __init__(self, names, type_node, is_var=False):
@@ -150,7 +156,7 @@ class ParamNode(ASTNode):
         self.is_var = is_var
 
     def __repr__(self):
-        return f"ParamNode(names='{self.names}', type='{self.type_node}', is_var={self.is_var})"
+        return f"Param(names='{self.names}', type='{self.type_node}', is_var={self.is_var})"
 
 class ProcedureFunctionCallNode(ASTNode):
     def __init__(self, name, args=None):
@@ -160,7 +166,7 @@ class ProcedureFunctionCallNode(ASTNode):
         self.children.extend(self.args)
 
     def __repr__(self):
-        return f"ProcedureFunctionCallNode(name='{self.name}', args={self.args})"
+        return f"ProcedureFunctionCall('{self.name}')"
 
 class IfNode(ASTNode):
     def __init__(self, condition, then_block, else_block=None):
@@ -173,7 +179,7 @@ class IfNode(ASTNode):
             self.children.append(else_block)
 
     def __repr__(self):
-        return f"IfNode(condition={self.condition}, then={self.then_block}, else={self.else_block})"
+        return f"If(condition={self.condition}, then={self.then_block}, else={self.else_block})"
 
 class WhileNode(ASTNode):
     def __init__(self, condition, body):
@@ -183,7 +189,7 @@ class WhileNode(ASTNode):
         self.children.extend([condition, body])
 
     def __repr__(self):
-        return f"WhileNode(condition={self.condition}, body={self.body})"
+        return f"While(condition={self.condition}, body={self.body})"
 
 class RepeatNode(ASTNode):
     def __init__(self, body, condition):
@@ -193,7 +199,7 @@ class RepeatNode(ASTNode):
         self.children.extend([body, condition])
 
     def __repr__(self):
-        return f"RepeatNode(body={self.body}, until={self.condition})"
+        return f"Repeat(body={self.body}, until={self.condition})"
 
 class ForNode(ASTNode):
     def __init__(self, var_node, start_expr, end_expr, direction, body):
@@ -206,7 +212,7 @@ class ForNode(ASTNode):
         self.children.extend([var_node, start_expr, end_expr, body])
 
     def __repr__(self):
-        return f"ForNode({self.var_node} := {self.start_expr} {self.direction} {self.end_expr}, body={self.body})"
+        return f"For({self.var_node} := {self.start_expr} {self.direction} {self.end_expr}, body={self.body})"
 
 class CaseBranchNode(ASTNode):
     def __init__(self, constants, statement):
@@ -217,7 +223,7 @@ class CaseBranchNode(ASTNode):
 
     def __repr__(self):
         consts = ", ".join(str(c) for c in self.constants)
-        return f"CaseBranchNode([{consts}] => {self.statement})"
+        return f"CaseBranch([{consts}] => {self.statement})"
 
 class CaseNode(ASTNode):
     def __init__(self, expr_node, branches):
@@ -228,7 +234,7 @@ class CaseNode(ASTNode):
         self.children.extend(branches)
 
     def __repr__(self):
-        return f"CaseNode(expr={self.expr_node}, branches={self.branches})"
+        return f"Case(expr={self.expr_node}, branches={self.branches})"
 
 class ArrayTypeNode(ASTNode):
     def __init__(self, base_type, bounds):
@@ -236,7 +242,7 @@ class ArrayTypeNode(ASTNode):
         self.base_type = base_type
         self.bounds = bounds
     def __repr__(self):
-        return f"ArrayTypeNode(base_type={self.base_type}, bounds={self.bounds})"
+        return f"ArrayType(base_type={self.base_type}, bounds={self.bounds})"
 
 class ArrayAccessNode(ASTNode):
     def __init__(self, array, index):
@@ -244,7 +250,7 @@ class ArrayAccessNode(ASTNode):
         self.index = index
 
     def __repr__(self):
-        return f"ArrayAccessNode(array={self.array}, index={self.index})"
+        return f"ArrayAccess(array={self.array}, index={self.index})"
 
 class RecordFieldNode(ASTNode):
     def __init__(self, name, type_):
@@ -253,7 +259,7 @@ class RecordFieldNode(ASTNode):
         self.type_ = type_
 
     def __repr__(self):
-        return f"RecordFieldNode(name='{self.name}', type='{self.type_}')"
+        return f"RecordField('{self.name}')"
 
 class RecordTypeNode(ASTNode):
     def __init__(self, fields=None):
@@ -262,7 +268,7 @@ class RecordTypeNode(ASTNode):
         self.children.extend(self.fields)
 
     def __repr__(self):
-        return f"RecordTypeNode(fields={self.fields})"
+        return f"RecordType(fields={self.fields})"
 
 class RangeTypeNode(ASTNode):
     def __init__(self, lower, upper):
@@ -271,4 +277,4 @@ class RangeTypeNode(ASTNode):
         self.upper = upper
 
     def __repr__(self):
-        return f"RangeTypeNode({self.lower}-{self.upper})"
+        return f"RangeType({self.lower}-{self.upper})"

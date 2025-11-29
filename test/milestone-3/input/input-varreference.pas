@@ -1,4 +1,4 @@
-program TestVarReference;
+program VarRef;
 prosedur tukar(variabel x: integer; y: integer);
 mulai
   x := y;

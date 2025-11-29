@@ -1,12 +1,11 @@
 class ReservedWords:
     LIST = [
-        "program", "variabel", "mulai", "selesai", "jika", "maka", 
-        "selain_itu", "selama", "lakukan", "untuk", "ke", "turun_ke", 
-        "integer", "real", "boolean", "char", "larik", "dari", "true", 
-        "false", "prosedur", "fungsi", "konstanta", "tipe", "sampai", 
+        "program", "variabel", "mulai", "selesai", "jika", "maka",
+        "selain_itu", "selama", "lakukan", "untuk", "ke", "turun_ke", "larik", "dari", "true",
+        "false", "prosedur", "fungsi", "konstanta", "tipe", "sampai",
         "ulangi", "rekaman", "kasus", "dan", "atau", "tidak", "bagi", "mod"
     ]
-    
+
     @staticmethod
     def count():
         return len(ReservedWords.LIST)
@@ -28,3 +27,4 @@ class TypeKind:
     CHAR    = 4
     ARRAY   = 5
     RECORD  = 6
+

@@ -332,13 +332,50 @@ class ASTBuilder:
         return None
 
     def build_simple_expression_node(self, node):
+        # 1. Ambil semua term dan operator
         terms = [self.build_term_node(c) for c in node.child if c.type == "<term>"]
         ops = [c for c in node.child if isinstance(c, Token) and c.type == "ARITHMETIC_OPERATOR"]
-        if not ops:
-            return terms[0] if terms else None
-        current = terms[0]
-        for i, op in enumerate(ops):
-            current = BinOpNode(current, op.value, terms[i+1])
+
+        if not terms:
+            return None
+
+        # 2. Cek apakah operasi pertama adalah Unary (misal: -3 atau +10)
+        # Indikator: Anak pertama node -> TOKEN OPERATOR
+        first_child = node.child[0]
+        is_unary_start = isinstance(first_child, Token) and first_child.type == "ARITHMETIC_OPERATOR"
+
+        current = None
+        term_idx = 0
+        op_idx = 0
+
+        # SPLIT UNARY VS BINARY
+        if is_unary_start:
+            # Unary (-3): Ambil operator ke-0 dan term ke-0
+            op_val = ops[0].value
+            term_val = terms[0]
+            current = UnaryOpNode(op_val, term_val) # Pake Node Unary
+
+            term_idx = 1
+            op_idx = 1
+        else:
+            # Kasus Biasa (3+5): Term ke-0 jadi base kiri
+            current = terms[0]
+            term_idx = 1
+            op_idx = 0
+
+        # Sisanya lanjut as Binary Operation (looping manual)
+        while op_idx < len(ops):
+            # check pastiin ada term kanan
+            if term_idx >= len(terms):
+                 break
+
+            op_val = ops[op_idx].value
+            right_val = terms[term_idx]
+            current = BinOpNode(current, op_val, right_val)
+
+            op_idx += 1
+            term_idx += 1
+
         return current
 
     def build_term_node(self, node):

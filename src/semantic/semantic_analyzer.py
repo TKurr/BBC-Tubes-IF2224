@@ -20,8 +20,11 @@ class SemanticAnalyzer:
         # Prosedur dan fungsi bawaan (built-in)
         self.builtins = {
             'writeln', 'write', 'readln', 'read',
-            'tulis', 'baca',  # Indonesian equivalents
+            'tulis', 'baca',
         }
+
+
+
 
     def analyze(self, ast_root):
         try:
@@ -49,17 +52,28 @@ class SemanticAnalyzer:
     # ========== Struktur Program ==========
 
     def visit_ProgramNode(self, node):
-        # Nama program tidak disimpan di tabel simbol pada implementasi ini
-        # Hanya proses deklarasi dan blok utama
+        # Tambahkan nama program ke symbol table
+        if node.name:
+            prog_idx = self.symbol_table.add_program_name(node.name)
+            # Dekorasi node
+            node.attr['tab_index'] = prog_idx
+            node.attr['type'] = TypeKind.NOTYPE
+            node.attr['lev'] = 0
 
         # Kunjungi bagian deklarasi
         if node.declarations:
             for decl in node.declarations:
                 self.visit(decl)
 
-        # Kunjungi blok utama
+        # Kunjungi blok utama - enter scope untuk compound statement
         if node.block:
+            block_idx = self.symbol_table.enter_scope()
+            # Dekorasi block node
+            node.block.attr['block_index'] = block_idx
+            node.block.attr['lev'] = self.symbol_table.current_level
+
             self.visit(node.block)
+            self.symbol_table.exit_scope()
 
     def visit_BlockNode(self, node):
         """Kunjungi blok (compound statement)"""
@@ -119,9 +133,19 @@ class SemanticAnalyzer:
                 # Simpan referensi ke tabel array di TAB
                 if var_idx >= 0 and var_idx < len(self.symbol_table.tab):
                     self.symbol_table.tab[var_idx]['ref'] = len(self.symbol_table.atab) - 1
+
+            # Dekorasi node
+            node.attr['tab_index'] = var_idx
+            node.attr['type'] = TypeKind.ARRAY
+            node.attr['lev'] = self.symbol_table.current_level
         else:
             type_kind = self._get_type_kind(node.vartype)
-            self.symbol_table.add_variable(node.name, type_kind)
+            var_idx = self.symbol_table.add_variable(node.name, type_kind)
+
+            # Dekorasi node
+            node.attr['tab_index'] = var_idx
+            node.attr['type'] = type_kind
+            node.attr['lev'] = self.symbol_table.current_level
 
     def visit_TypeDeclarationNode(self, node):
         """Kunjungi deklarasi tipe"""
@@ -223,6 +247,8 @@ class SemanticAnalyzer:
     def visit_AssignNode(self, node):
         """Kunjungi pernyataan assignment"""
         # Periksa target ada dan dapat di-assign
+
+
         if isinstance(node.target, VarNode):
             symbol = self.symbol_table.lookup(node.target.name)
             if not symbol:
@@ -249,6 +275,9 @@ class SemanticAnalyzer:
             self.type_checker.check_assignment(target_type, value_type)
         except SemanticError as e:
             self.report_error(e)
+
+        # Dekorasi node assignment (type void karena statement)
+        node.attr['type'] = 'void'
 
     def visit_IfNode(self, node):
         """Kunjungi pernyataan if"""
@@ -327,6 +356,22 @@ class SemanticAnalyzer:
             if node.args:
                 for arg in node.args:
                     self.visit(arg)
+
+            # Cek apakah builtin sudah ada di symbol table
+            symbol = self.symbol_table.lookup(call_name)
+            if not symbol:
+                # Tambahkan builtin ke symbol table saat pertama kali digunakan
+                tab_idx = self.symbol_table.add_builtin_procedure(call_name)
+            else:
+                # Cari tab_index untuk built-in yang sudah ada
+                tab_idx = None
+                for idx, entry in enumerate(self.symbol_table.tab):
+                    if entry.get('name') == call_name:
+                        tab_idx = idx
+                        break
+
+            node.attr['tab_index'] = tab_idx
+            node.attr['type'] = 'predefined'
             return TypeKind.NOTYPE
 
         # Cari entri prosedur/fungsi
@@ -380,6 +425,8 @@ class SemanticAnalyzer:
             result_type = self.type_checker.get_result_type(
                 node.op, left_type, right_type
             )
+            # Dekorasi node
+            node.attr['type'] = result_type
             return result_type
         except SemanticError as e:
             self.report_error(e)
@@ -402,6 +449,17 @@ class SemanticAnalyzer:
         if not symbol:
             self.report_error(UndeclaredIdentifierError(node.name))
             return TypeKind.NOTYPE
+
+        # Dekorasi node dengan info dari symbol table
+        tab_idx = None
+        for idx, entry in enumerate(self.symbol_table.tab):
+            if entry.get('name') == node.name:
+                tab_idx = idx
+                break
+
+        node.attr['tab_index'] = tab_idx
+        node.attr['type'] = symbol['type']
+        node.attr['lev'] = symbol.get('lev', 0)
 
         return symbol['type']
 
@@ -445,15 +503,19 @@ class SemanticAnalyzer:
         """Kunjungi literal angka"""
         # Periksa apakah integer atau real
         if isinstance(node.value, int) or '.' not in str(node.value):
+            node.attr['type'] = TypeKind.INTEGER
             return TypeKind.INTEGER
+        node.attr['type'] = TypeKind.REAL
         return TypeKind.REAL
 
     def visit_StringNode(self, node):
         """Kunjungi literal string"""
         # String satu karakter bertipe char
         if len(node.value) == 1:
+            node.attr['type'] = TypeKind.CHAR
             return TypeKind.CHAR
         # String diperlakukan sebagai array char (disederhanakan)
+        node.attr['type'] = TypeKind.CHAR
         return TypeKind.CHAR
 
     def visit_BooleanNode(self, node):
