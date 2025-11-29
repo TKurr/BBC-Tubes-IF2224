@@ -27,7 +27,7 @@ class ASTBuilder:
                 "<declaration-part>": self.build_declarations_node,
                 "<const-declaration>": self.build_const_decl_node,
                 "<var-declaration>": self.build_var_decl_node,
-                "<type-declaration>": self.build_type_declaration_node,  
+                "<type-declaration>": self.build_type_declaration_node,
                 "<record-type>": self.build_record_type_node,
                 "<compound-statement>": self.build_block_node,
                 "<assignment-statement>": self.build_assign_node,
@@ -225,7 +225,7 @@ class ASTBuilder:
                 range_node = next((x for x in c.child if getattr(x,"type",None)=="<range>"), None)
                 if range_node:
                     lower = self.build_node(range_node.child[0])
-                    upper = self.build_node(range_node.child[2]) 
+                    upper = self.build_node(range_node.child[2])
 
                     bounds.append((lower, upper))
                 base_type_node = next((x for x in c.child if getattr(x,"type",None)=="<type>"), None)
@@ -356,12 +356,12 @@ class ASTBuilder:
         if any(getattr(c, "value", "").lower() == "tidak" for c in node.child):
             factor = next((self.build_factor_node(c) for c in node.child if getattr(c, "value", "").lower() != "tidak"), None)
             return UnaryOpNode("tidak", factor)
-        
+
         # Boolean literal
         token = next((t for t in node.child if isinstance(t, Token) and t.type == "KEYWORD" and t.value.lower() in ("true","false")), None)
         if token:
             return BooleanNode(token.value.lower() == "true")
-        
+
         # Jika ada logical operator (dan/or)
         logical_ops = [t for t in node.child if isinstance(t, Token) and t.type == "LOGICAL_OPERATOR"]
         if logical_ops:
@@ -390,6 +390,15 @@ class ASTBuilder:
 
         for child in node.child:
             if child.type == "<parameter-group>":
+                is_var = False
+
+                #
+                for grandchild in child.child:
+                    if isinstance(grandchild, Token) and grandchild.value.lower() == "variabel":
+                        is_var = True
+                        break
+
+
                 # Ambil identifier list
                 id_list_node = next((c for c in child.child if c.type == "<identifier-list>"), None)
                 ids = [t.value for t in id_list_node.child if isinstance(t, Token) and t.type == "IDENTIFIER"] if id_list_node else []
@@ -402,7 +411,7 @@ class ASTBuilder:
                     vartype = t.value if t else None
 
                 for name in ids:
-                    params.append(ParamNode(name, vartype))
+                    params.append(ParamNode(name, vartype, is_var))
 
         return params
 

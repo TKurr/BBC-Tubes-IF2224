@@ -125,31 +125,32 @@ class BinOpNode(ASTNode):
 
 class ProcedureDeclNode(ASTNode):
     def __init__(self, name, params, block):
-        self.name = name              
-        self.params = params          
-        self.block = block            
+        self.name = name
+        self.params = params
+        self.block = block
 
     def __repr__(self):
         return f"ProcedureDeclNode(params='{self.params}', block='{self.block}')"
 
 class FunctionDeclNode(ASTNode):
     def __init__(self, name, params, return_type, block):
-        self.name = name              
-        self.params = params      
-        self.return_type = return_type    
-        self.block = block            
+        self.name = name
+        self.params = params
+        self.return_type = return_type
+        self.block = block
 
     def __repr__(self):
         return f"FunctonDeclNode(params='{self.params}', block='{self.block}', return_type='{self.return_type}')"
 
 class ParamNode(ASTNode):
-    def __init__(self, names, type_node):
+    def __init__(self, names, type_node, is_var=False):
         super().__init__()
-        self.names = names            
-        self.type_node = type_node    
-    
+        self.names = names
+        self.type_node = type_node
+        self.is_var = is_var
+
     def __repr__(self):
-        return f"ParamNode(names='{self.names}', type='{self.type_node}')"
+        return f"ParamNode(names='{self.names}', type='{self.type_node}', is_var={self.is_var})"
 
 class ProcedureFunctionCallNode(ASTNode):
     def __init__(self, name, args=None):
@@ -232,15 +233,15 @@ class CaseNode(ASTNode):
 class ArrayTypeNode(ASTNode):
     def __init__(self, base_type, bounds):
         super().__init__()
-        self.base_type = base_type 
-        self.bounds = bounds      
+        self.base_type = base_type
+        self.bounds = bounds
     def __repr__(self):
         return f"ArrayTypeNode(base_type={self.base_type}, bounds={self.bounds})"
 
 class ArrayAccessNode(ASTNode):
     def __init__(self, array, index):
-        self.array = array    
-        self.index = index    
+        self.array = array
+        self.index = index
 
     def __repr__(self):
         return f"ArrayAccessNode(array={self.array}, index={self.index})"

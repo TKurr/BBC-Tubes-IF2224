@@ -15,14 +15,14 @@ class Parser:
             self.current_token = self.tokens[self.pos]
         else:
             self.current_token = None
-            
+
     def peek(self, offset=1):
         '''Melihat token selanjutnya tanpa consume'''
         peek_pos = self.pos + offset
         if peek_pos < len(self.tokens):
             return self.tokens[peek_pos]
         return None
-    
+
     def expect(self, expected_type, expected_value=None):
         '''Expected token untuk suatu aturan produksi'''
         token = self.current_token
@@ -37,7 +37,7 @@ class Parser:
 
         self.advance()
         return token
-    
+
     def check(self, expected_type, expected_value=None):
         '''Compare current token with type and/or value'''
         if self.current_token is None:
@@ -55,7 +55,7 @@ class Parser:
         if self.current_token is not None:
             raise ParseError(f"Unexpected token {self.current_token.type}({self.current_token.value})", self.current_token)
         return node
-    
+
 	# Root
     def parse_program(self):
         '''Root node parse: header + declaration + compound statement + ending dot'''
@@ -93,56 +93,56 @@ class Parser:
         '''Parse const declaration'''
         node = ParseNode("<const-declaration>")
         node.add_child(self.expect("KEYWORD", "konstanta"))
-        
+
         while True:
             node.add_child(self.expect("IDENTIFIER"))
-            
+
             if self.check("RELATIONAL_OPERATOR") and self.current_token.value == "=":
                 node.add_child(self.expect("RELATIONAL_OPERATOR"))
             else:
                 raise ParseError(f"Expected '=' in constant declaration", self.current_token)
-            
+
             node.add_child(self.parse_expression())
             node.add_child(self.expect("SEMICOLON"))
-            
+
             if not self.check("IDENTIFIER"):
                 break
         return node
-    
+
     def parse_type_declaration(self):
         '''Parse type declaration'''
         node = ParseNode("<type-declaration>")
         node.add_child(self.expect("KEYWORD", "tipe"))
-        
+
         while True:
             node.add_child(self.expect("IDENTIFIER"))
-            
+
             if self.check("RELATIONAL_OPERATOR") and self.current_token.value == "=":
                 node.add_child(self.expect("RELATIONAL_OPERATOR"))
             else:
                 raise ParseError(f"Expected '=' in type declaration", self.current_token)
             node.add_child(self.parse_type_definition())
             node.add_child(self.expect("SEMICOLON"))
-            
+
             if not self.check("IDENTIFIER"):
                 break
         return node
-    
+
     def parse_var_declaration(self):
         '''Parse variable declaration'''
         node = ParseNode("<var-declaration>")
         node.add_child(self.expect("KEYWORD", "variabel"))
-        
+
         while True:
             node.add_child(self.parse_identifier_list())
             node.add_child(self.expect("COLON"))
             node.add_child(self.parse_type())
             node.add_child(self.expect("SEMICOLON"))
-            
+
             if not self.check("IDENTIFIER"):
                 break
         return node
-    
+
     def parse_subprogram_declaration(self):
         if self.check("KEYWORD", "prosedur"):
             return self.parse_procedure_declaration()
@@ -163,7 +163,7 @@ class Parser:
         node.add_child(self.parse_block())
         node.add_child(self.expect("SEMICOLON"))
         return node
-    
+
     def parse_function_declaration(self):
         node = ParseNode("<function-declaration>")
         node.add_child(self.expect("KEYWORD", "fungsi"))
@@ -179,19 +179,19 @@ class Parser:
         node.add_child(self.parse_block())
         node.add_child(self.expect("SEMICOLON"))
         return node
-    
+
     def parse_block(self):
         node = ParseNode("<block>")
         node.add_child(self.parse_declaration_part())
         node.add_child(self.parse_compound_statement())
         return node
-    
+
     def parse_formal_parameter_list(self):
         node = ParseNode("<formal-parameter-list>")
         node.add_child(self.expect("LPARENTHESIS"))
-        
+
         node.add_child(self.parse_parameter_group())
-        
+
         while self.check("SEMICOLON"):
             node.add_child(self.expect("SEMICOLON"))
             node.add_child(self.parse_parameter_group())
@@ -201,29 +201,35 @@ class Parser:
     def parse_parameter_group(self):
         '''Helper function for formal-parameter-list'''
         node = ParseNode("<parameter-group>")
+
+        # (Changes MST 3): cek kalo ada 'variabel' parameter as reference
+        if self.check('KEYWORD', 'variabel'):
+            node.add_child(self.expect("KEYWORD", 'variabel'))
+
+
         node.add_child(self.parse_identifier_list())
         node.add_child(self.expect("COLON"))
         node.add_child(self.parse_type())
         return node
-    
+
     # Type / Identifier
     def parse_identifier_list(self):
         '''Identifier, Identifier, Identifier'''
         node = ParseNode("<identifier-list>")
         node.add_child(self.expect("IDENTIFIER"))
-        
+
         while self.check("COMMA"):
             node.add_child(self.expect("COMMA"))
             node.add_child(self.expect("IDENTIFIER"))
         return node
-    
+
     def parse_type_definition(self):
         '''tipe di type-declaration saja, supports range'''
         node = ParseNode("<type-definition>")
 
         # RANGE TYPE (expression '..' expression)
         if self.lookahead_is_range():
-            left_expr = self.parse_expression() 
+            left_expr = self.parse_expression()
             node.add_child(left_expr)
             node.add_child(self.expect("RANGE_OPERATOR"))
             node.add_child(self.parse_expression())
@@ -255,7 +261,7 @@ class Parser:
     def parse_type(self):
         '''parse type di variable declaration or function return type (ga ada range)'''
         node = ParseNode("<type>")
-        
+
         #array type
         if self.check("KEYWORD", "larik"):
             node.add_child(self.parse_array_type())
@@ -271,14 +277,14 @@ class Parser:
              self.check("KEYWORD", "boolean") or self.check("KEYWORD", "char"):
             node.add_child(self.expect("KEYWORD"))
             return node
-        
+
         #custom type (identifier)
         if self.check("IDENTIFIER"):
             node.add_child(self.expect("IDENTIFIER"))
             return node
-        
+
         raise ParseError(f"Expected type", self.current_token)
-    
+
 
     def parse_array_type(self):
         node = ParseNode("<array-type>")
@@ -294,7 +300,7 @@ class Parser:
         node = ParseNode("<record-type>")
         node.add_child(self.expect("KEYWORD", "rekaman"))
         node.add_child(self.parse_parameter_group())
-        
+
         while self.check("SEMICOLON"):
             node.add_child(self.expect("SEMICOLON"))
             if self.check("KEYWORD", "selesai"):
@@ -303,7 +309,7 @@ class Parser:
 
         node.add_child(self.expect("KEYWORD", "selesai"))
         return node
-    
+
     def parse_variable(self):
         '''parse variable, dot chaining + indexing '''
         node = ParseNode("<variable>")
@@ -311,7 +317,7 @@ class Parser:
 
         identifier = self.expect("IDENTIFIER")
         node.add_child(identifier)
-        
+
         while True:
             if self.check("DOT"):
                 node.add_child(self.expect("DOT"))
@@ -335,19 +341,19 @@ class Parser:
 
         return node
 
-    
+
     def parse_range(self):
         node = ParseNode("<range>")
         node.add_child(self.parse_expression())
-        
+
         if self.check("RANGE_OPERATOR"):
             node.add_child(self.expect("RANGE_OPERATOR"))
         else:
             raise ParseError("Expected '..' for range", self.current_token)
-        
+
         node.add_child(self.parse_expression())
         return node
-    
+
     # Compound & Statements
     def parse_compound_statement(self):
         node = ParseNode("<compound-statement>")
@@ -392,7 +398,7 @@ class Parser:
         '''List of statements parser'''
         node = ParseNode("<statement-list>")
         node.add_child(self.parse_statement())
-        
+
         while self.check("SEMICOLON"):
             node.add_child(self.expect("SEMICOLON"))
             if self.check("KEYWORD", "selesai"):
@@ -433,10 +439,10 @@ class Parser:
         # Built-in procedure/function
         if self.check("KEYWORD") and self.peek() and self.peek().type == "LPARENTHESIS":
             return self.parse_procedure_function_call()
-        
+
         raise ParseError(f"Unexpected token in statement", self.current_token)
 
-    # Specific statement 
+    # Specific statement
     def parse_assignment_statement(self):
         '''Assignment statement parser'''
         node = ParseNode("<assignment-statement>")
@@ -451,7 +457,7 @@ class Parser:
         node.add_child(self.parse_expression())
         node.add_child(self.expect("KEYWORD", "maka"))
         node.add_child(self.parse_statement())
-        
+
 		# parse else
         if self.check("KEYWORD", "selain_itu") or self.check("KEYWORD", "selain-itu"):
             node.add_child(self.expect("KEYWORD"))
@@ -465,47 +471,47 @@ class Parser:
         node.add_child(self.expect("KEYWORD", "lakukan"))
         node.add_child(self.parse_statement())
         return node
-    
+
     def parse_for_statement(self):
         node = ParseNode("<for-statement>")
         node.add_child(self.expect("KEYWORD", "untuk"))
         node.add_child(self.expect("IDENTIFIER"))
         node.add_child(self.expect("ASSIGN_OPERATOR"))
         node.add_child(self.parse_expression())
-        
+
         if self.check("KEYWORD", "ke"):
             node.add_child(self.expect("KEYWORD", "ke"))
         elif self.check("KEYWORD", "turun_ke"):
             node.add_child(self.expect("KEYWORD", "turun_ke"))
         else:
             raise ParseError("Expected 'ke' or 'turun_ke' in for-statement", self.current_token)
-       
+
         node.add_child(self.parse_expression())
         node.add_child(self.expect("KEYWORD", "lakukan"))
         node.add_child(self.parse_statement())
         return node
-    
+
     def parse_repeat_statement(self):
         node = ParseNode("<repeat-statement>")
         node.add_child(self.expect("KEYWORD", "ulangi"))
         stmt_list_node = ParseNode("<statement-list>")
         stmt_list_node.add_child(self.parse_statement())
-        
+
         while self.check("SEMICOLON"):
             stmt_list_node.add_child(self.expect("SEMICOLON"))
             if self.check("KEYWORD", "sampai"):
                 break
             stmt_list_node.add_child(self.parse_statement())
-        
+
         node.add_child(stmt_list_node)
         node.add_child(self.expect("KEYWORD", "sampai"))
-        node.add_child(self.parse_expression()) 
+        node.add_child(self.parse_expression())
         return node
 
     def parse_procedure_function_call(self):
         '''Procedure/function call parser: name(args), name bisa identifier atau builtin keyword'''
         node = ParseNode("<procedure/function-call>")
-        
+
         if self.check("IDENTIFIER"):
             node.add_child(self.expect("IDENTIFIER"))
         elif self.check("KEYWORD"):
@@ -521,14 +527,14 @@ class Parser:
         if not self.check("RPARENTHESIS"):
             node.add_child(self.parse_parameter_list())
         node.add_child(self.expect("RPARENTHESIS"))
-            
+
         return node
 
     # Parameters
     def parse_parameter_list(self):
         node = ParseNode("<parameter-list>")
         node.add_child(self.parse_expression())
-        
+
         while self.check("COMMA"):
             node.add_child(self.expect("COMMA"))
             node.add_child(self.parse_expression())
@@ -540,7 +546,7 @@ class Parser:
         node = ParseNode("<expression>")
 
         node.add_child(self.parse_simple_expression())
-        
+
         if self.is_relational_operator():
             node.add_child(self.parse_relational_operator())
             node.add_child(self.parse_simple_expression())
@@ -550,16 +556,16 @@ class Parser:
         '''parse simple expression'''
         node = ParseNode("<simple-expression>")
 
-        
+
         if self.check("ARITHMETIC_OPERATOR") and (self.current_token.value == "+" or self.current_token.value == "-"):
             node.add_child(self.expect("ARITHMETIC_OPERATOR"))
-        
+
         node.add_child(self.parse_term())
-        
+
         while self.is_additive_operator():
             node.add_child(self.parse_additive_operator())
             node.add_child(self.parse_term())
-        
+
         return node
 
     def parse_term(self):
@@ -567,7 +573,7 @@ class Parser:
         node = ParseNode("<term>")
 
         node.add_child(self.parse_factor())
-        
+
         while self.is_multiplicative_operator():
             node.add_child(self.parse_multiplicative_operator())
             node.add_child(self.parse_factor())
@@ -580,19 +586,19 @@ class Parser:
         # Number literal
         if self.check("NUMBER"):
             node.add_child(self.expect("NUMBER"))
-        
+
         # String literal
         elif self.check("STRING_LITERAL"):
             node.add_child(self.expect("STRING_LITERAL"))
-        
+
         # Character literal
         elif self.check("CHAR_LITERAL"):
             node.add_child(self.expect("CHAR_LITERAL"))
-        
+
         # Boolean literal (true/false)
         elif self.check("KEYWORD", "true") or self.check("KEYWORD", "false"):
             node.add_child(self.expect("KEYWORD"))
-        
+
         # NOT operator
         elif self.check("LOGICAL_OPERATOR", "tidak") or self.check("KEYWORD", "tidak"):
             if self.check("LOGICAL_OPERATOR"):
@@ -600,13 +606,13 @@ class Parser:
             else:
                 node.add_child(self.expect("KEYWORD"))
             node.add_child(self.parse_factor())
-        
+
         # Ekspresi dalam tanda kurung
         elif self.check("LPARENTHESIS"):
             node.add_child(self.expect("LPARENTHESIS"))
             node.add_child(self.parse_expression())
             node.add_child(self.expect("RPARENTHESIS"))
-        
+
         # Identifier (variable atau function/procedure call)
         elif self.check("IDENTIFIER"):
             next_token = self.peek()
@@ -617,9 +623,9 @@ class Parser:
                 node.add_child(self.parse_variable())
         else:
             raise ParseError(f"Unexpected token in factor", self.current_token)
-        
+
         return node
-        
+
 
     # Operators
     def parse_relational_operator(self):
@@ -635,7 +641,7 @@ class Parser:
             return self.expect("LOGICAL_OPERATOR")
         else:
             raise ParseError(f"Expected additive operator", self.current_token)
-        
+
     def parse_multiplicative_operator(self):
         if self.check("ARITHMETIC_OPERATOR"):
             return self.expect("ARITHMETIC_OPERATOR")
@@ -643,25 +649,25 @@ class Parser:
             return self.expect("LOGICAL_OPERATOR","dan")
         else:
             raise ParseError(f"Expected multiplicative operator", self.current_token)
-        
-    # Helper function 
-    
+
+    # Helper function
+
     def is_relational_operator(self):
         if self.current_token is None:
             return False
         return self.check("RELATIONAL_OPERATOR") and self.current_token.value in ["<", ">", "<=", ">=", "=", "<>"]
-    
+
     def is_additive_operator(self):
         if self.current_token is None:
             return False
         return (self.check("ARITHMETIC_OPERATOR") and self.current_token.value in ["+", "-"]) or self.check("LOGICAL_OPERATOR", "atau")
-    
+
     def is_multiplicative_operator(self):
         if self.current_token is None:
             return False
         return (self.check("ARITHMETIC_OPERATOR") and self.current_token.value in ["*", "/","bagi","mod"]) or \
             self.check("LOGICAL_OPERATOR","dan")
-    
+
     def lookahead_is_range(self):
         ''' detect range-type pattern <expr> .. <expr>, cuman dalem type-definition'''
 
