@@ -23,9 +23,6 @@ class SemanticAnalyzer:
             'tulis', 'baca',
         }
 
-
-
-
     def analyze(self, ast_root):
         try:
             self.visit(ast_root)
@@ -107,45 +104,65 @@ class SemanticAnalyzer:
         self.symbol_table.add_constant(node.name, type_kind, None)
 
     def visit_VarDeclNode(self, node):
-        """Kunjungi deklarasi variabel"""
-        # Periksa apakah sudah dideklarasikan di scope saat ini
+        """Kunjungi deklarasi variabel, menangani tipe sederhana dan array."""
+        
+        # Periksa Redeklarasi
         existing = self.symbol_table.lookup_current_scope(node.name)
         if existing:
             self.report_error(RedeclaredIdentifierError(node.name))
             return
 
-        # Tentukan tipe
+        type_kind = self._get_type_kind(node.vartype)
+
+        # Penanganan Tipe Array (Membutuhkan ATAB)
         if hasattr(node.vartype, '__class__') and node.vartype.__class__.__name__ == 'ArrayTypeNode':
-            # Tangani tipe array - simpan tipe elemen untuk diambil nanti
+            
+            # Mendapatkan tipe dasar elemen (etyp)
             base_type = self._get_type_kind(node.vartype.base_type)
+
+            # Mendapatkan Batas dan Mengkonversi ke Integer
+            low = 1
+            high = 10
+            if hasattr(node.vartype, 'bounds') and node.vartype.bounds:
+                bound_info = node.vartype.bounds[0] 
+                
+                # Asumsi bound_info adalah tuple (lower_node, upper_node) dari ASTBuilder
+                if isinstance(bound_info, tuple) and len(bound_info) == 2:
+                    lower_node, upper_node = bound_info
+                    
+                    # Konversi nilai ke int sebelum digunakan!
+                    if hasattr(lower_node, 'value'):
+                        low = int(lower_node.value)
+                    if hasattr(upper_node, 'value'):
+                        high = int(upper_node.value)
+
+            # Tambahkan variabel ke TAB
             var_idx = self.symbol_table.add_variable(node.name, TypeKind.ARRAY)
-            # Simpan info array di ATAB
-            if hasattr(node.vartype, 'bounds') and len(node.vartype.bounds) >= 2:
-                low = node.vartype.bounds[0].value if hasattr(node.vartype.bounds[0], 'value') else 1
-                high = node.vartype.bounds[1].value if hasattr(node.vartype.bounds[1], 'value') else 10
-                self.symbol_table.add_array_info(
-                    xtyp=TypeKind.ARRAY,
-                    etyp=base_type,
-                    low=low,
-                    high=high,
-                    elsz=1
-                )
-                # Simpan referensi ke tabel array di TAB
-                if var_idx >= 0 and var_idx < len(self.symbol_table.tab):
-                    self.symbol_table.tab[var_idx]['ref'] = len(self.symbol_table.atab) - 1
 
-            # Dekorasi node
-            node.attr['tab_index'] = var_idx
-            node.attr['type'] = TypeKind.ARRAY
-            node.attr['lev'] = self.symbol_table.current_level
+            # Tambahkan informasi array ke ATAB
+            atab_idx = self.symbol_table.add_array_info(
+                xtyp=TypeKind.ARRAY,
+                etyp=base_type, 
+                low=low,    
+                high=high,  
+                elsz=1 # Asumsi ukuran elemen 1 byte
+            )
+            
+            # Kaitkan entri TAB dengan entri ATAB (menggunakan 'ref')
+            if var_idx >= 0 and var_idx < len(self.symbol_table.tab):
+                self.symbol_table.tab[var_idx]['ref'] = atab_idx
+
+            # Update type_kind untuk dekorasi node
+            type_kind = TypeKind.ARRAY
+            
+        # Penanganan Tipe Sederhana
         else:
-            type_kind = self._get_type_kind(node.vartype)
             var_idx = self.symbol_table.add_variable(node.name, type_kind)
-
-            # Dekorasi node
-            node.attr['tab_index'] = var_idx
-            node.attr['type'] = type_kind
-            node.attr['lev'] = self.symbol_table.current_level
+            
+        # Dekorasi Node
+        node.attr['tab_index'] = var_idx
+        node.attr['type'] = type_kind
+        node.attr['lev'] = self.symbol_table.current_level
 
     def visit_TypeDeclarationNode(self, node):
         """Kunjungi deklarasi tipe"""
@@ -493,6 +510,53 @@ class SemanticAnalyzer:
 
         return TypeKind.NOTYPE
 
+    def _get_type_kind(self, type_str):
+        """Konversikan string tipe menjadi konstanta TypeKind atau resolusi dari TAB"""
+        type_map = {
+            'integer': TypeKind.INTEGER,
+            'real': TypeKind.REAL,
+            'boolean': TypeKind.BOOLEAN,
+            'char': TypeKind.CHAR,
+            'array': TypeKind.ARRAY,
+            'larik': TypeKind.ARRAY,
+            'record': TypeKind.RECORD,
+            'rekaman': TypeKind.RECORD
+        }
+
+        if isinstance(type_str, str):
+            # Tipe Primitif/Keyword
+            mapped_type = type_map.get(type_str.lower())
+            if mapped_type is not None:
+                return mapped_type
+            
+            # Tipe Didefinisikan Pengguna (Cari di Symbol Table)
+            symbol = self.symbol_table.lookup(type_str)
+            if symbol and symbol['obj'] == ObjKind.TYPE:
+                return symbol['type']
+            
+            # Tipe Record/Array
+            return TypeKind.NOTYPE
+
+        return TypeKind.NOTYPE
+
+
+    def visit_ArrayTypeNode(self, node):
+        """Resolusi info tipe array untuk VarDecl/TypeDecl"""
+        
+        base_type_kind = self._get_type_kind(node.base_type)
+        
+        # Ambil batasan
+        low = 1
+        high = 10
+        if hasattr(node, 'bounds') and node.bounds:
+            bound_info = node.bounds[0] 
+            if isinstance(bound_info, tuple) and len(bound_info) == 2:
+                lower_node, upper_node = bound_info
+                low = lower_node.value if hasattr(lower_node, 'value') else 1 
+                high = upper_node.value if hasattr(upper_node, 'value') else 10 
+            
+        return TypeKind.ARRAY, base_type_kind, low, high
+
 
     def visit_NumNode(self, node):
         """Kunjungi literal angka"""
@@ -533,7 +597,19 @@ class SemanticAnalyzer:
         }
 
         if isinstance(type_str, str):
-            return type_map.get(type_str.lower(), TypeKind.NOTYPE)
+            #Tipe Primitif/Keyword
+            mapped_type = type_map.get(type_str.lower())
+            if mapped_type is not None:
+                return mapped_type
+            
+            #Tipe Didefinisikan Pengguna (Cari di Symbol Table)
+            symbol = self.symbol_table.lookup(type_str)
+            if symbol and symbol['obj'] == ObjKind.TYPE:
+                # Mengembalikan TypeKind yang disimpan di entri TYPE
+                return symbol['type']
+            
+            # Tipe Record/Array (fallback)
+            return TypeKind.NOTYPE
 
         return TypeKind.NOTYPE
 
