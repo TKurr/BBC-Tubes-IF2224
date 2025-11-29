@@ -49,7 +49,7 @@ class VarDeclNode(ASTNode):
         self.vartype = vartype
 
     def __repr__(self):
-        return f"VarDecl(name='{self.name}')"
+        return f"VarDecl('{self.name}')"
 
 class TypeDeclarationNode(ASTNode):
     def __init__(self, name, type_node):
@@ -83,7 +83,7 @@ class VarNode(ASTNode):
         self.name = name
 
     def __repr__(self):
-        return f"Var('{self.name}')"
+        return f"target '{self.name}'"
 
 class NumNode(ASTNode):
     def __init__(self, value):
@@ -91,7 +91,7 @@ class NumNode(ASTNode):
         self.value = value
 
     def __repr__(self):
-        return f"Num ({self.value})"
+        return f"value {self.value}"
 
 class StringNode(ASTNode):
     def __init__(self, value):
@@ -127,7 +127,7 @@ class BinOpNode(ASTNode):
         self.children.extend([left, right])
 
     def __repr__(self):
-        return f"BinOp('{self.op}')"
+        return f"BinOp '{self.op}'"
 
 class ProcedureDeclNode(ASTNode):
     def __init__(self, name, params, block):

@@ -246,37 +246,32 @@ class SemanticAnalyzer:
 
     def visit_AssignNode(self, node):
         """Kunjungi pernyataan assignment"""
-        # Periksa target ada dan dapat di-assign
+        # visit target buat dekorasi
+        target_type = self.visit(node.target)
 
-
+        # cek jika target valid (bukan konst)
         if isinstance(node.target, VarNode):
             symbol = self.symbol_table.lookup(node.target.name)
             if not symbol:
                 self.report_error(UndeclaredIdentifierError(node.target.name))
                 return
 
-            # Tidak dapat melakukan assignment ke konstanta
             if symbol['obj'] == ObjKind.CONSTANT:
                 self.report_error(InvalidAssignmentError(
                     node.target.name, "cannot assign to constant"
                 ))
                 return
 
-            target_type = symbol['type']
-        else:
-            # Tangani tipe target lain (akses array, dsb.)
-            target_type = self.visit(node.target)
+            if target_type == TypeKind.NOTYPE:
+                target_type = symbol['type']
 
-        # Ambil tipe nilai
         value_type = self.visit(node.value)
-
-        # Periksa kompatibilitas tipe
+        # cek kalo integer := integer (valid) ato integer := string (error)
         try:
             self.type_checker.check_assignment(target_type, value_type)
         except SemanticError as e:
             self.report_error(e)
 
-        # Dekorasi node assignment (type void karena statement)
         node.attr['type'] = 'void'
 
     def visit_IfNode(self, node):

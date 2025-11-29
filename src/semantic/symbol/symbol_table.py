@@ -216,7 +216,9 @@ class SymbolTable:
         self.tab.append(new_entry)
 
         new_id_idx = len(self.tab) - 1
-        global_block["last"] = new_id_idx
+
+        # Ini gadipake assuming builtin ga termasuk pointer last
+        # global_block["last"] = new_id_idx
         return new_id_idx
 
     # ==========================================================

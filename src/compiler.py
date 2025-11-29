@@ -95,13 +95,13 @@ def compiler():
             ast_builder = ASTBuilder(root)
             ast_root = ast_builder.build()
 
-            print("\n=============== SEMANTIC ANALYSIS ===============")
+            print("\n============================= SEMANTIC ANALYSIS + SYMBOL TABLE =============================")
             analyzer = SemanticAnalyzer()
             success, errors = analyzer.analyze(ast_root)
 
             analyzer.symbol_table.print_tables()
 
-            print("\n===== DECORATED ABSTRACT SYNTAX TREE =====\n")
+            print("\n================================= DECORATED AST =================================\n")
             print(ast_root)
 
             if not success:
