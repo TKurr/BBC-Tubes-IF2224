@@ -1,0 +1,40 @@
+============================= SEMANTIC ANALYSIS + SYMBOL TABLE =============================
+
+
+TAB (Identifier Table)
+
+Idx  Name         Link  Obj        Type  Ref   Nrm  Lev  Adr  
+--------------------------------------------------
+...  (reserved words 0-28)
+29   contoh_string 0     program    0     0     1    0    0    
+30   s1           0     variable   7     0     1    0    0    
+31   s2           30    variable   7     0     1    0    1    
+32   writeln      0     procedure  0     0     1    0    0    
+
+BTAB (Block Table)
+
+Idx  Last  Lpar  Psze  Vsze 
+--------------------------------------------------
+0    31    0     0     2    
+1    0     0     0     0    
+
+ATAB (Array Table)
+(kosong karena tidak ada array)
+
+================================= DECORATED AST =================================
+
+└─ ProgramNode(name: 'contoh_string') → tab_index:29, type:void, lev:0
+   ├─ Declarations
+   │  ├─ VarDecl('s1') → tab_index:30, type:string, lev:0
+   │  └─ VarDecl('s2') → tab_index:31, type:string, lev:0
+   └─ Block → block_index:1, lev:1
+      ├─ Assign('s1' := 'Informatika ') → type:void
+      │  ├─ target 's1' → tab_index:30, type:string, lev:0
+      │  └─ String ('Informatika ') → type:string
+      ├─ Assign('s2' := 'ITB') → type:void
+      │  ├─ target 's2' → tab_index:31, type:string, lev:0
+      │  └─ String ('ITB') → type:string
+      └─ ProcedureFunctionCall('writeln') → predefined, tab_index:32
+         └─ BinOp '+' → type:string
+            ├─ target 's1' → tab_index:30, type:string, lev:0
+            └─ target 's2' → tab_index:31, type:string, lev:0
