@@ -17,7 +17,18 @@ class TypeChecker:
             TypeKind.RECORD: "record",
             TypeKind.NOTYPE: "notype"
         }
-    
+
+    def get_field_type(self, record_type, field_name, line=None, column=None):
+        if isinstance(record_type, dict) and record_type.get('kind') == TypeKind.RECORD:
+            if field_name not in record_type['fields']:
+                raise TypeMismatchError(f"field '{field_name}'", "not found", "field access", line, column)
+            return record_type['fields'][field_name]
+        
+        if record_type == TypeKind.RECORD:
+            raise TypeMismatchError("record with fields", "TypeKind.RECORD (no fields info)", f"field access '{field_name}'", line, column)
+        
+        raise TypeMismatchError("record", self.get_type_name(record_type), f"field access '{field_name}'", line, column)
+
     def get_type_name(self, type_kind):
         """Ubah TypeKind menjadi string yang mudah dibaca"""
         return self.type_names.get(type_kind, f"unknown({type_kind})")
@@ -165,14 +176,20 @@ class TypeChecker:
                                    None, line, column)
     
     def check_assignment(self, target_type, value_type, line=None, column=None):
-        """Periksa apakah penugasan (assignment) valid"""
+        # handle record
+        if isinstance(target_type, dict) and target_type.get('kind') == TypeKind.RECORD:
+            if not isinstance(value_type, dict) or value_type.get('kind') != TypeKind.RECORD:
+                raise TypeMismatchError("record", self.get_type_name(value_type), "assignment", line, column)
+            # cek tiap field
+            for field_name, field_type in target_type['fields'].items():
+                if field_name not in value_type['fields']:
+                    raise TypeMismatchError(f"record field {field_name}", "missing", "assignment", line, column)
+            return  # assignment valid
+
+        # existing check
         if not self.is_compatible(target_type, value_type):
-            raise TypeMismatchError(
-                self.get_type_name(target_type),
-                self.get_type_name(value_type),
-                "assignment", line, column
-            )
-    
+            raise TypeMismatchError(self.get_type_name(target_type), self.get_type_name(value_type), "assignment", line, column)
+
     def check_array_index(self, index_type, line=None, column=None):
         """Periksa apakah indeks array valid (harus integer)"""
         if index_type != TypeKind.INTEGER:

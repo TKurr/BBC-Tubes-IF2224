@@ -294,7 +294,11 @@ class SymbolTable:
             if i < start_idx: continue
             s_link = str(entry.get('link', 0))
             s_obj  = str(entry.get('obj', '-'))
-            s_type = str(entry.get('type', 0))
+            typ_entry = entry.get('type', 0)
+            if isinstance(typ_entry, dict) and 'kind' in typ_entry:
+                s_type = str(typ_entry['kind'])
+            else:
+                s_type = str(typ_entry)
             s_ref  = str(entry.get('ref', 0))
             s_nrm  = str(entry.get('nrm', 0))
             s_lev  = str(entry.get('lev', 0))

@@ -104,62 +104,64 @@ class SemanticAnalyzer:
         self.symbol_table.add_constant(node.name, type_kind, None)
 
     def visit_VarDeclNode(self, node):
-        """Kunjungi deklarasi variabel, menangani tipe sederhana dan array."""
-        
-        # Periksa Redeklarasi
         existing = self.symbol_table.lookup_current_scope(node.name)
         if existing:
             self.report_error(RedeclaredIdentifierError(node.name))
             return
 
-        type_kind = self._get_type_kind(node.vartype)
+        # Handle variable of a user-defined RECORD type
+        if isinstance(node.vartype, RecordTypeNode):
+            # cek tipe record di symbol table jika ada type_name
+            type_name = getattr(node.vartype, 'name', None)
+            type_kind = TypeKind.RECORD
 
-        # Penanganan Tipe Array (Membutuhkan ATAB)
-        if hasattr(node.vartype, '__class__') and node.vartype.__class__.__name__ == 'ArrayTypeNode':
-            
-            # Mendapatkan tipe dasar elemen (etyp)
-            base_type = self._get_type_kind(node.vartype.base_type)
-
-            # Mendapatkan Batas dan Mengkonversi ke Integer
-            low = 1
-            high = 10
-            if hasattr(node.vartype, 'bounds') and node.vartype.bounds:
-                bound_info = node.vartype.bounds[0] 
-                
-                # Asumsi bound_info adalah tuple (lower_node, upper_node) dari ASTBuilder
-                if isinstance(bound_info, tuple) and len(bound_info) == 2:
-                    lower_node, upper_node = bound_info
-                    
-                    # Konversi nilai ke int sebelum digunakan!
-                    if hasattr(lower_node, 'value'):
-                        low = int(lower_node.value)
-                    if hasattr(upper_node, 'value'):
-                        high = int(upper_node.value)
-
-            # Tambahkan variabel ke TAB
-            var_idx = self.symbol_table.add_variable(node.name, TypeKind.ARRAY)
-
-            # Tambahkan informasi array ke ATAB
-            atab_idx = self.symbol_table.add_array_info(
-                xtyp=TypeKind.ARRAY,
-                etyp=base_type, 
-                low=low,    
-                high=high,  
-                elsz=1 # Asumsi ukuran elemen 1 byte
-            )
-            
-            # Kaitkan entri TAB dengan entri ATAB (menggunakan 'ref')
-            if var_idx >= 0 and var_idx < len(self.symbol_table.tab):
-                self.symbol_table.tab[var_idx]['ref'] = atab_idx
-
-            # Update type_kind untuk dekorasi node
-            type_kind = TypeKind.ARRAY
-            
-        # Penanganan Tipe Sederhana
-        else:
             var_idx = self.symbol_table.add_variable(node.name, type_kind)
-            
-        # Dekorasi Node
+            node.attr['tab_index'] = var_idx
+            node.attr['type'] = type_kind
+            node.attr['lev'] = self.symbol_table.current_level
+
+            # isi fields
+            fields = {}
+            if hasattr(node.vartype, 'fields'):
+                for f in node.vartype.fields:
+                    # gunakan _get_type_kind tapi jika f.type_ adalah user-defined record, ambil fields
+                    ft = self._get_type_kind(f.type_)
+                    # Jika user-defined record, ambil fields dari symbol table
+                    if ft == TypeKind.RECORD and isinstance(f.type_, str):
+                        rec_symbol = self.symbol_table.lookup(f.type_)
+                        if rec_symbol and 'fields' in rec_symbol:
+                            fields[f.name] = rec_symbol['fields']
+                        else:
+                            fields[f.name] = TypeKind.NOTYPE
+                    else:
+                        fields[f.name] = ft
+            node.attr['fields'] = fields
+            self.symbol_table.tab[var_idx]['fields'] = fields
+            return
+
+        # Handle array
+        if getattr(node.vartype, '__class__', None).__name__ == 'ArrayTypeNode':
+            base_type = self._get_type_kind(node.vartype.base_type)
+            low, high = 1, 10
+            if hasattr(node.vartype, 'bounds') and node.vartype.bounds:
+                b = node.vartype.bounds[0]
+                if isinstance(b, tuple) and len(b) == 2:
+                    low = int(getattr(b[0], 'value', 1))
+                    high = int(getattr(b[1], 'value', 10))
+
+            var_idx = self.symbol_table.add_variable(node.name, TypeKind.ARRAY)
+            atab_idx = self.symbol_table.add_array_info(
+                xtyp=TypeKind.ARRAY, etyp=base_type, low=low, high=high, elsz=1
+            )
+            self.symbol_table.tab[var_idx]['ref'] = atab_idx
+            node.attr['tab_index'] = var_idx
+            node.attr['type'] = TypeKind.ARRAY
+            node.attr['lev'] = self.symbol_table.current_level
+            return
+
+        # Tipe sederhana
+        type_kind = self._get_type_kind(node.vartype)
+        var_idx = self.symbol_table.add_variable(node.name, type_kind)
         node.attr['tab_index'] = var_idx
         node.attr['type'] = type_kind
         node.attr['lev'] = self.symbol_table.current_level
@@ -176,7 +178,15 @@ class SemanticAnalyzer:
         type_kind = self._resolve_type_node(node.type_node)
 
         # Tambahkan ke tabel simbol
-        self.symbol_table.add_type(node.name, type_kind)
+        type_idx = self.symbol_table.add_type(node.name, type_kind)
+
+        # Jika ini RecordTypeNode, simpan field info ke symbol table entry
+        if isinstance(node.type_node, RecordTypeNode):
+            # _resolve_type_node sudah mengisi node.type_node.attr['fields']
+            field_info = node.type_node.attr.get('fields', {})
+            if type_idx is not None and 0 <= type_idx < len(self.symbol_table.tab):
+                self.symbol_table.tab[type_idx]['fields'] = field_info
+
 
     def visit_ProcedureDeclNode(self, node):
         """Kunjungi deklarasi prosedur"""
@@ -263,33 +273,17 @@ class SemanticAnalyzer:
 
     def visit_AssignNode(self, node):
         """Kunjungi pernyataan assignment"""
-        # visit target buat dekorasi
         target_type = self.visit(node.target)
-
-        # cek jika target valid (bukan konst)
-        if isinstance(node.target, VarNode):
-            symbol = self.symbol_table.lookup(node.target.name)
-            if not symbol:
-                self.report_error(UndeclaredIdentifierError(node.target.name))
-                return
-
-            if symbol['obj'] == ObjKind.CONSTANT:
-                self.report_error(InvalidAssignmentError(
-                    node.target.name, "cannot assign to constant"
-                ))
-                return
-
-            if target_type == TypeKind.NOTYPE:
-                target_type = symbol['type']
-
         value_type = self.visit(node.value)
-        # cek kalo integer := integer (valid) ato integer := string (error)
+
+        # cek kesesuaian tipe
         try:
             self.type_checker.check_assignment(target_type, value_type)
         except SemanticError as e:
             self.report_error(e)
 
-        node.attr['type'] = 'void'
+        node.attr['type'] = TypeKind.NOTYPE
+
 
     def visit_IfNode(self, node):
         """Kunjungi pernyataan if"""
@@ -456,7 +450,6 @@ class SemanticAnalyzer:
             return TypeKind.NOTYPE
 
     def visit_VarNode(self, node):
-        """Kunjungi referensi variabel"""
         symbol = self.symbol_table.lookup(node.name)
         if not symbol:
             self.report_error(UndeclaredIdentifierError(node.name))
@@ -472,6 +465,10 @@ class SemanticAnalyzer:
         node.attr['tab_index'] = tab_idx
         node.attr['type'] = symbol['type']
         node.attr['lev'] = symbol.get('lev', 0)
+
+        # Copy fields dari symbol table (untuk record)
+        if 'fields' in symbol:
+            node.attr['fields'] = symbol['fields']  # <<< ini penting
 
         return symbol['type']
 
@@ -510,34 +507,30 @@ class SemanticAnalyzer:
 
         return TypeKind.NOTYPE
 
-    def _get_type_kind(self, type_str):
-        """Konversikan string tipe menjadi konstanta TypeKind atau resolusi dari TAB"""
-        type_map = {
-            'integer': TypeKind.INTEGER,
-            'real': TypeKind.REAL,
-            'boolean': TypeKind.BOOLEAN,
-            'char': TypeKind.CHAR,
-            'array': TypeKind.ARRAY,
-            'larik': TypeKind.ARRAY,
-            'record': TypeKind.RECORD,
-            'rekaman': TypeKind.RECORD
-        }
-
-        if isinstance(type_str, str):
-            # Tipe Primitif/Keyword
-            mapped_type = type_map.get(type_str.lower())
-            if mapped_type is not None:
-                return mapped_type
-            
-            # Tipe Didefinisikan Pengguna (Cari di Symbol Table)
-            symbol = self.symbol_table.lookup(type_str)
-            if symbol and symbol['obj'] == ObjKind.TYPE:
-                return symbol['type']
-            
-            # Tipe Record/Array
+    def visit_RecordFieldNode(self, node):
+        """Kunjungi field record, mendukung nested record & array"""
+        parent_type = self.visit(node.parent)  # tipe dari record parent
+        if parent_type == TypeKind.NOTYPE:
             return TypeKind.NOTYPE
 
-        return TypeKind.NOTYPE
+        if isinstance(parent_type, dict) and parent_type.get('kind') == TypeKind.RECORD:
+            fields = parent_type.get('fields', {})
+        else:
+            self.report_error(SemanticError(
+                f"Cannot access field '{node.name}' of non-record type"
+            ))
+            return TypeKind.NOTYPE
+
+        # cek apakah field ada
+        field_type = fields.get(node.name)
+        if field_type is None:
+            self.report_error(UndeclaredIdentifierError(node.name))
+            return TypeKind.NOTYPE
+
+        # dekorasi node
+        node.attr['type'] = field_type
+        node.attr['parent_type'] = parent_type
+        return field_type
 
 
     def visit_ArrayTypeNode(self, node):
@@ -605,8 +598,11 @@ class SemanticAnalyzer:
             #Tipe Didefinisikan Pengguna (Cari di Symbol Table)
             symbol = self.symbol_table.lookup(type_str)
             if symbol and symbol['obj'] == ObjKind.TYPE:
-                # Mengembalikan TypeKind yang disimpan di entri TYPE
-                return symbol['type']
+                type_kind = symbol['type']
+                # ambil fields jika record
+                if type_kind == TypeKind.RECORD and 'fields' in symbol:
+                    return {'kind': TypeKind.RECORD, 'fields': symbol['fields']}
+                return type_kind
             
             # Tipe Record/Array (fallback)
             return TypeKind.NOTYPE
@@ -614,12 +610,34 @@ class SemanticAnalyzer:
         return TypeKind.NOTYPE
 
     def _resolve_type_node(self, type_node):
-        """Resolusi node tipe menjadi TypeKind"""
-        # Handle berbagai representasi node tipe
+
+        # RangeTypeNode -> integer subrange
+        if isinstance(type_node, RangeTypeNode):
+            low = type_node.lower.value
+            high = type_node.upper.value
+            type_node.attr['range'] = (low, high)
+            return TypeKind.INTEGER   # Pascal subrange dianggap integer
+
+        # ArrayTypeNode
+        if isinstance(type_node, ArrayTypeNode):
+            # simpan batasan dan tipe elemen
+            base_type = self._get_type_kind(type_node.base_type)
+            bound = type_node.bounds[0]
+            low = bound[0].value
+            high = bound[1].value
+            type_node.attr['array_info'] = (base_type, low, high)
+            return TypeKind.ARRAY
+
+        # RecordTypeNode
+        if isinstance(type_node, RecordTypeNode):
+            fields = {}
+            for f in type_node.fields:
+                fields[f.name] = self._get_type_kind(f.type_)
+            type_node.attr['fields'] = fields
+            return TypeKind.RECORD
+
+        # primitive / identifier type
         if isinstance(type_node, str):
             return self._get_type_kind(type_node)
-
-        # Handle tipe array, tipe record, dll.
-        # Dapat di-expand sesuai struktur AST
 
         return TypeKind.NOTYPE
