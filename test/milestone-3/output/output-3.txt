@@ -1,0 +1,89 @@
+============================= SEMANTIC ANALYSIS + SYMBOL TABLE =============================
+
+
+TAB (Identifier Table)
+
+Idx  Name         Link  Obj        Type  Ref   Nrm  Lev  Adr  
+--------------------------------------------------
+...  (reserved words 0-28)
+29   RangesLoops  0     program    0     0     1    0    0    
+30   i            0     variable   1     0     1    0    0    
+31   a            30    variable   5     0     1    0    1    
+32   writeln      0     procedure  0     0     1    0    0    
+
+BTAB (Block Table)
+
+Idx  Last  Lpar  Psze  Vsze 
+--------------------------------------------------
+0    31    0     0     2    
+1    0     0     0     0    
+
+ATAB (Array Table)
+Idx  Xtyp  Etyp  Eref  Low   High  Elsz  Size 
+--------------------------------------------------
+1    5     1     0     0     3     1     4    
+
+================================= DECORATED AST =================================
+
+└─ ProgramNode(name: 'RangesLoops') → tab_index:29, type:void, lev:0
+   ├─ Declarations
+   │  ├─ VarDecl('i') → tab_index:30, type:integer, lev:0
+   │  └─ VarDecl('a') → tab_index:31, type:5, lev:0
+   │     └─ ArrayType(base_type=integer, bounds=[(value 0, value 3)])
+   └─ Block → block_index:1, lev:1
+      ├─ Assign('target' := 1) → type:void
+      │  ├─ Array Variable(array=a, index=0)
+      │  │  ├─ target 'a'
+      │  │  └─ value 0 → type:integer
+      │  └─ value 1 → type:integer
+      ├─ For Loop
+      │  ├─ target 'i'
+      │  ├─ value 0 → type:integer
+      │  ├─ value 3 → type:integer
+      │  └─ Assign('target' := i) → type:void
+      │     ├─ Array Variable(array=a, index=index)
+      │     │  ├─ target 'a'
+      │     │  └─ target 'i' → tab_index:30, type:integer, lev:0
+      │     └─ target 'i' → tab_index:30, type:integer, lev:0
+      ├─ For Loop
+      │  ├─ target 'i'
+      │  ├─ value 3 → type:integer
+      │  ├─ value 0 → type:integer
+      │  └─ Assign('target' := expr) → type:void
+      │     ├─ Array Variable(array=a, index=index)
+      │     │  ├─ target 'a'
+      │     │  └─ target 'i' → tab_index:30, type:integer, lev:0
+      │     └─ BinOp '+' → type:integer
+      │        ├─ Array Variable(array=a, index=index)
+      │        │  ├─ target 'a'
+      │        │  └─ target 'i' → tab_index:30, type:integer, lev:0
+      │        └─ value 1 → type:integer
+      ├─ If Condition
+      │  ├─ BinOp '<' → type:boolean
+      │  │  ├─ Array Variable(array=a, index=1)
+      │  │  │  ├─ target 'a'
+      │  │  │  └─ value 1 → type:integer
+      │  │  └─ Array Variable(array=a, index=2)
+      │  │     ├─ target 'a'
+      │  │     └─ value 2 → type:integer
+      │  └─ Assign('target' := expr) → type:void
+      │     ├─ Array Variable(array=a, index=1)
+      │     │  ├─ target 'a'
+      │     │  └─ value 1 → type:integer
+      │     └─ Array Variable(array=a, index=2)
+      │        ├─ target 'a'
+      │        └─ value 2 → type:integer
+      ├─ While Loop
+      │  ├─ BinOp '>' → type:boolean
+      │  │  ├─ target 'i' → tab_index:30, type:integer, lev:0
+      │  │  └─ value 0 → type:integer
+      │  └─ Assign('i' := expr) → type:void
+      │     ├─ target 'i' → tab_index:30, type:integer, lev:0
+      │     └─ BinOp '-' → type:integer
+      │        ├─ target 'i' → tab_index:30, type:integer, lev:0
+      │        └─ value 1 → type:integer
+      └─ ProcedureFunctionCall('writeln') → predefined, tab_index:32
+         ├─ String ('ok') → type:char
+         └─ Array Variable(array=a, index=1)
+            ├─ target 'a'
+            └─ value 1 → type:integer

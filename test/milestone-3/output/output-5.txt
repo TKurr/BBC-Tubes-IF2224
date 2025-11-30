@@ -1,0 +1,105 @@
+============================= SEMANTIC ANALYSIS + SYMBOL TABLE =============================
+
+
+TAB (Identifier Table)
+
+Idx  Name         Link  Obj        Type  Ref   Nrm  Lev  Adr  
+--------------------------------------------------
+...  (reserved words 0-28)
+29   DeclsProcFunc 0     program    0     0     1    0    0    
+30   K            0     constant   1     0     1    0    None 
+31   i            30    variable   1     0     1    0    0    
+32   r            31    variable   2     0     1    0    1    
+33   ch           32    variable   4     0     1    0    2    
+34   ok           33    variable   3     0     1    0    3    
+35   arr          34    variable   5     0     1    0    4    
+36   IncVar       35    procedure  0     1     1    0    0    
+37   z            0     variable   1     0     1    1    0    
+38   AddOne       36    function   1     2     1    0    0    
+39   t            0     variable   1     0     1    1    0    
+40   writeln      0     procedure  0     0     1    0    0    
+
+BTAB (Block Table)
+
+Idx  Last  Lpar  Psze  Vsze 
+--------------------------------------------------
+0    38    0     0     5    
+1    37    37    1     0    
+2    39    39    1     0    
+3    0     0     0     0    
+
+ATAB (Array Table)
+Idx  Xtyp  Etyp  Eref  Low   High  Elsz  Size 
+--------------------------------------------------
+1    5     1     0     1     10    1     10   
+
+================================= DECORATED AST =================================
+
+└─ ProgramNode(name: 'DeclsProcFunc') → tab_index:29, type:void, lev:0
+   ├─ Declarations
+   │  ├─ ConstDecl(name='K')
+   │  ├─ VarDecl('i') → tab_index:31, type:integer, lev:0
+   │  ├─ VarDecl('r') → tab_index:32, type:real, lev:0
+   │  ├─ VarDecl('ch') → tab_index:33, type:char, lev:0
+   │  ├─ VarDecl('ok') → tab_index:34, type:boolean, lev:0
+   │  ├─ VarDecl('arr') → tab_index:35, type:5, lev:0
+   │  │  └─ ArrayType(base_type=integer, bounds=[(value 1, value 10)])
+   │  ├─ ProcedureDecl(name='IncVar')
+   │  │  ├─ Param(names='z', type='integer', is_var=False)
+   │  │  └─ Block
+   │  │     ├─ Declarations
+   │  │     └─ Block
+   │  │        └─ Assign('z' := expr) → type:void
+   │  │           ├─ target 'z' → tab_index:37, type:integer, lev:1
+   │  │           └─ BinOp '+' → type:integer
+   │  │              ├─ target 'z' → tab_index:37, type:integer, lev:1
+   │  │              └─ value 1 → type:integer
+   │  └─ FunctionDecl(name='AddOne')
+   │     ├─ Param(names='t', type='integer', is_var=False)
+   │     └─ Block
+   │        ├─ Declarations
+   │        └─ Block
+   │           └─ Assign('AddOne' := expr) → type:void
+   │              ├─ target 'AddOne' → tab_index:38, type:integer, lev:0
+   │              └─ BinOp '+' → type:integer
+   │                 ├─ target 't' → tab_index:39, type:integer, lev:1
+   │                 └─ value 1 → type:integer
+   └─ Block → block_index:3, lev:1
+      ├─ Assign('r' := 3.14) → type:void
+      │  ├─ target 'r' → tab_index:32, type:real, lev:0
+      │  └─ value 3.14 → type:real
+      ├─ Assign('ch' := 'A') → type:void
+      │  ├─ target 'ch' → tab_index:33, type:char, lev:0
+      │  └─ String ('A') → type:char
+      ├─ Assign('ok' := True) → type:void
+      │  ├─ target 'ok' → tab_index:34, type:boolean, lev:0
+      │  └─ Boolean (True)
+      ├─ Assign('target' := 2) → type:void
+      │  ├─ Array Variable(array=arr, index=1)
+      │  │  ├─ target 'arr'
+      │  │  └─ value 1 → type:integer
+      │  └─ value 2 → type:integer
+      ├─ If Condition
+      │  ├─ BinOp '>=' → type:boolean
+      │  │  ├─ Array Variable(array=arr, index=1)
+      │  │  │  ├─ target 'arr'
+      │  │  │  └─ value 1 → type:integer
+      │  │  └─ target 'K' → tab_index:30, type:integer, lev:0
+      │  ├─ Assign('target' := AddOne) → type:void
+      │  │  ├─ Array Variable(array=arr, index=1)
+      │  │  │  ├─ target 'arr'
+      │  │  │  └─ value 1 → type:integer
+      │  │  └─ ProcedureFunctionCall('AddOne')
+      │  │     └─ Array Variable(array=arr, index=1)
+      │  │        ├─ target 'arr'
+      │  │        └─ value 1 → type:integer
+      │  └─ ProcedureFunctionCall('IncVar')
+      │     └─ Array Variable(array=arr, index=1)
+      │        ├─ target 'arr'
+      │        └─ value 1 → type:integer
+      └─ ProcedureFunctionCall('writeln') → predefined, tab_index:40
+         ├─ String ('Value: ') → type:char
+         ├─ Array Variable(array=arr, index=1)
+         │  ├─ target 'arr'
+         │  └─ value 1 → type:integer
+         └─ String ('.') → type:char

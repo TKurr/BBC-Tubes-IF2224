@@ -1,0 +1,74 @@
+============================= SEMANTIC ANALYSIS + SYMBOL TABLE =============================
+
+
+TAB (Identifier Table)
+
+Idx  Name         Link  Obj        Type  Ref   Nrm  Lev  Adr  
+--------------------------------------------------
+...  (reserved words 0-28)
+29   TestBasic    0     program    0     0     1    0    0    
+30   i            0     variable   1     0     1    0    0    
+31   limit        30    variable   1     0     1    0    1    
+32   sum          31    variable   1     0     1    0    2    
+33   flag         32    variable   3     0     1    0    3    
+34   writeln      0     procedure  0     0     1    0    0    
+
+BTAB (Block Table)
+
+Idx  Last  Lpar  Psze  Vsze 
+--------------------------------------------------
+0    33    0     0     4    
+1    0     0     0     0    
+
+ATAB (Array Table)
+(kosong karena tidak ada array)
+
+================================= DECORATED AST =================================
+
+└─ ProgramNode(name: 'TestBasic') → tab_index:29, type:void, lev:0
+   ├─ Declarations
+   │  ├─ VarDecl('i') → tab_index:30, type:integer, lev:0
+   │  ├─ VarDecl('limit') → tab_index:31, type:integer, lev:0
+   │  ├─ VarDecl('sum') → tab_index:32, type:integer, lev:0
+   │  └─ VarDecl('flag') → tab_index:33, type:boolean, lev:0
+   └─ Block → block_index:1, lev:1
+      ├─ Assign('limit' := 10) → type:void
+      │  ├─ target 'limit' → tab_index:31, type:integer, lev:0
+      │  └─ value 10 → type:integer
+      ├─ Assign('sum' := 0) → type:void
+      │  ├─ target 'sum' → tab_index:32, type:integer, lev:0
+      │  └─ value 0 → type:integer
+      ├─ Assign('flag' := True) → type:void
+      │  ├─ target 'flag' → tab_index:33, type:boolean, lev:0
+      │  └─ Boolean (True)
+      ├─ For Loop
+      │  ├─ target 'i'
+      │  ├─ value 1 → type:integer
+      │  ├─ target 'limit' → tab_index:31, type:integer, lev:0
+      │  └─ Assign('sum' := expr) → type:void
+      │     ├─ target 'sum' → tab_index:32, type:integer, lev:0
+      │     └─ BinOp '+' → type:integer
+      │        ├─ target 'sum' → tab_index:32, type:integer, lev:0
+      │        └─ target 'i' → tab_index:30, type:integer, lev:0
+      ├─ If Condition
+      │  ├─ BinOp '>' → type:boolean
+      │  │  ├─ target 'sum' → tab_index:32, type:integer, lev:0
+      │  │  └─ value 50 → type:integer
+      │  ├─ Assign('flag' := False) → type:void
+      │  │  ├─ target 'flag' → tab_index:33, type:boolean, lev:0
+      │  │  └─ Boolean (False)
+      │  └─ Assign('flag' := True) → type:void
+      │     ├─ target 'flag' → tab_index:33, type:boolean, lev:0
+      │     └─ Boolean (True)
+      └─ While Loop
+         ├─ BinOp '>' → type:boolean
+         │  ├─ target 'limit' → tab_index:31, type:integer, lev:0
+         │  └─ value 0 → type:integer
+         └─ Block
+            ├─ Assign('limit' := expr) → type:void
+            │  ├─ target 'limit' → tab_index:31, type:integer, lev:0
+            │  └─ BinOp '-' → type:integer
+            │     ├─ target 'limit' → tab_index:31, type:integer, lev:0
+            │     └─ value 1 → type:integer
+            └─ ProcedureFunctionCall('writeln') → predefined, tab_index:34
+               └─ target 'limit' → tab_index:31, type:integer, lev:0

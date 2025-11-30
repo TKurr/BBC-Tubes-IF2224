@@ -1,0 +1,41 @@
+============================= SEMANTIC ANALYSIS + SYMBOL TABLE =============================
+
+
+TAB (Identifier Table)
+
+Idx  Name         Link  Obj        Type  Ref   Nrm  Lev  Adr  
+--------------------------------------------------
+...  (reserved words 0-28)
+29   VarRef       0     program    0     0     1    0    0    
+30   tukar        0     procedure  0     1     1    0    0    
+31   x            0     variable   1     0     0    1    0    
+32   y            31    variable   1     0     1    1    1    
+
+BTAB (Block Table)
+
+Idx  Last  Lpar  Psze  Vsze 
+--------------------------------------------------
+0    30    0     0     0    
+1    32    32    2     0    
+2    0     0     0     0    
+
+ATAB (Array Table)
+(kosong karena tidak ada array)
+
+================================= DECORATED AST =================================
+
+└─ ProgramNode(name: 'VarRef') → tab_index:29, type:void, lev:0
+   ├─ Declarations
+   │  └─ ProcedureDecl(name='tukar')
+   │     ├─ Param(names='x', type='integer', is_var=True)
+   │     ├─ Param(names='y', type='integer', is_var=False)
+   │     └─ Block
+   │        ├─ Declarations
+   │        └─ Block
+   │           └─ Assign('x' := y) → type:void
+   │              ├─ target 'x' → tab_index:31, type:integer, lev:1
+   │              └─ target 'y' → tab_index:32, type:integer, lev:1
+   └─ Block → block_index:2, lev:1
+      └─ ProcedureFunctionCall('tukar')
+         ├─ value 10 → type:integer
+         └─ value 20 → type:integer

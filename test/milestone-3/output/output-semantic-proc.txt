@@ -1,0 +1,79 @@
+============================= SEMANTIC ANALYSIS + SYMBOL TABLE =============================
+
+
+TAB (Identifier Table)
+
+Idx  Name         Link  Obj        Type  Ref   Nrm  Lev  Adr  
+--------------------------------------------------
+...  (reserved words 0-28)
+29   TestProc     0     program    0     0     1    0    0    
+30   global_x     0     variable   1     0     1    0    0    
+31   global_y     30    variable   1     0     1    0    1    
+32   swap         31    procedure  0     1     1    0    0    
+33   a            0     variable   1     0     0    1    0    
+34   b            33    variable   1     0     0    1    1    
+35   temp         34    variable   1     0     1    1    0    
+36   add          32    function   1     2     1    0    0    
+37   a            0     variable   1     0     1    1    0    
+38   b            37    variable   1     0     1    1    1    
+
+BTAB (Block Table)
+
+Idx  Last  Lpar  Psze  Vsze 
+--------------------------------------------------
+0    36    0     0     2    
+1    35    34    2     1    
+2    38    38    2     0    
+3    0     0     0     0    
+
+ATAB (Array Table)
+(kosong karena tidak ada array)
+
+================================= DECORATED AST =================================
+
+└─ ProgramNode(name: 'TestProc') → tab_index:29, type:void, lev:0
+   ├─ Declarations
+   │  ├─ VarDecl('global_x') → tab_index:30, type:integer, lev:0
+   │  ├─ VarDecl('global_y') → tab_index:31, type:integer, lev:0
+   │  ├─ ProcedureDecl(name='swap')
+   │  │  ├─ Param(names='a', type='integer', is_var=True)
+   │  │  ├─ Param(names='b', type='integer', is_var=True)
+   │  │  └─ Block
+   │  │     ├─ Declarations
+   │  │     │  └─ VarDecl('temp') → tab_index:35, type:integer, lev:1
+   │  │     └─ Block
+   │  │        ├─ Assign('temp' := a) → type:void
+   │  │        │  ├─ target 'temp' → tab_index:35, type:integer, lev:1
+   │  │        │  └─ target 'a' → tab_index:33, type:integer, lev:1
+   │  │        ├─ Assign('a' := b) → type:void
+   │  │        │  ├─ target 'a' → tab_index:33, type:integer, lev:1
+   │  │        │  └─ target 'b' → tab_index:34, type:integer, lev:1
+   │  │        └─ Assign('b' := temp) → type:void
+   │  │           ├─ target 'b' → tab_index:34, type:integer, lev:1
+   │  │           └─ target 'temp' → tab_index:35, type:integer, lev:1
+   │  └─ FunctionDecl(name='add')
+   │     ├─ Param(names='a', type='integer', is_var=False)
+   │     ├─ Param(names='b', type='integer', is_var=False)
+   │     └─ Block
+   │        ├─ Declarations
+   │        └─ Block
+   │           └─ Assign('add' := expr) → type:void
+   │              ├─ target 'add' → tab_index:36, type:integer, lev:0
+   │              └─ BinOp '+' → type:integer
+   │                 ├─ target 'a' → tab_index:33, type:integer, lev:1
+   │                 └─ target 'b' → tab_index:34, type:integer, lev:1
+   └─ Block → block_index:3, lev:1
+      ├─ Assign('global_x' := 100) → type:void
+      │  ├─ target 'global_x' → tab_index:30, type:integer, lev:0
+      │  └─ value 100 → type:integer
+      ├─ Assign('global_y' := 200) → type:void
+      │  ├─ target 'global_y' → tab_index:31, type:integer, lev:0
+      │  └─ value 200 → type:integer
+      ├─ ProcedureFunctionCall('swap')
+      │  ├─ target 'global_x' → tab_index:30, type:integer, lev:0
+      │  └─ target 'global_y' → tab_index:31, type:integer, lev:0
+      └─ Assign('global_x' := add) → type:void
+         ├─ target 'global_x' → tab_index:30, type:integer, lev:0
+         └─ ProcedureFunctionCall('add')
+            ├─ target 'global_x' → tab_index:30, type:integer, lev:0
+            └─ target 'global_y' → tab_index:31, type:integer, lev:0

@@ -1,0 +1,80 @@
+============================= SEMANTIC ANALYSIS + SYMBOL TABLE =============================
+
+
+TAB (Identifier Table)
+
+Idx  Name         Link  Obj        Type  Ref   Nrm  Lev  Adr  
+--------------------------------------------------
+...  (reserved words 0-28)
+29   TestArrayRecord 0     program    0     0     1    0    0    
+30   Point        0     type       6     0     1    0    0    
+31   p            30    variable   6     0     1    0    0    
+32   matrix       31    variable   5     0     1    0    1    
+33   i            32    variable   1     0     1    0    2    
+34   total        33    variable   1     0     1    0    3    
+35   writeln      0     procedure  0     0     1    0    0    
+
+BTAB (Block Table)
+
+Idx  Last  Lpar  Psze  Vsze 
+--------------------------------------------------
+0    34    0     0     4    
+1    0     0     0     0    
+
+ATAB (Array Table)
+Idx  Xtyp  Etyp  Eref  Low   High  Elsz  Size 
+--------------------------------------------------
+1    5     1     0     1     5     1     5    
+
+================================= DECORATED AST =================================
+
+└─ ProgramNode(name: 'TestArrayRecord') → tab_index:29, type:void, lev:0
+   ├─ Declarations
+   │  ├─ TypeDecl(name='Point')
+   │  │  └─ RecordType(fields=[RecordField('x'), RecordField('y')])
+   │  │     ├─ RecordField('x')
+   │  │     └─ RecordField('y')
+   │  ├─ VarDecl('p') → tab_index:31, type:{'kind': 6, 'fields': {'x': 1, 'y': 1}}, lev:0
+   │  ├─ VarDecl('matrix') → tab_index:32, type:5, lev:0
+   │  │  └─ ArrayType(base_type=integer, bounds=[(value 1, value 5)])
+   │  ├─ VarDecl('i') → tab_index:33, type:integer, lev:0
+   │  └─ VarDecl('total') → tab_index:34, type:integer, lev:0
+   └─ Block → block_index:1, lev:1
+      ├─ Assign('x' := 10) → type:void
+      │  ├─ RecordField('x') → type:integer
+      │  │  └─ target 'p' → tab_index:31, type:{'kind': 6, 'fields': {'x': 1, 'y': 1}}, lev:0
+      │  └─ value 10 → type:integer
+      ├─ Assign('y' := 20) → type:void
+      │  ├─ RecordField('y') → type:integer
+      │  │  └─ target 'p' → tab_index:31, type:{'kind': 6, 'fields': {'x': 1, 'y': 1}}, lev:0
+      │  └─ value 20 → type:integer
+      ├─ Assign('total' := expr) → type:void
+      │  ├─ target 'total' → tab_index:34, type:integer, lev:0
+      │  └─ BinOp '*' → type:integer
+      │     ├─ RecordField('x') → type:integer
+      │     │  └─ target 'p' → tab_index:31, type:{'kind': 6, 'fields': {'x': 1, 'y': 1}}, lev:0
+      │     └─ RecordField('y') → type:integer
+      │        └─ target 'p' → tab_index:31, type:{'kind': 6, 'fields': {'x': 1, 'y': 1}}, lev:0
+      ├─ For Loop
+      │  ├─ target 'i'
+      │  ├─ value 1 → type:integer
+      │  ├─ value 5 → type:integer
+      │  └─ Assign('target' := expr) → type:void
+      │     ├─ Array Variable(array=matrix, index=index)
+      │     │  ├─ target 'matrix'
+      │     │  └─ target 'i' → tab_index:33, type:integer, lev:0
+      │     └─ BinOp '*' → type:integer
+      │        ├─ target 'i' → tab_index:33, type:integer, lev:0
+      │        └─ value 2 → type:integer
+      ├─ Assign('target' := expr) → type:void
+      │  ├─ Array Variable(array=matrix, index=1)
+      │  │  ├─ target 'matrix'
+      │  │  └─ value 1 → type:integer
+      │  └─ BinOp '+' → type:integer
+      │     ├─ Array Variable(array=matrix, index=1)
+      │     │  ├─ target 'matrix'
+      │     │  └─ value 1 → type:integer
+      │     └─ RecordField('x') → type:integer
+      │        └─ target 'p' → tab_index:31, type:{'kind': 6, 'fields': {'x': 1, 'y': 1}}, lev:0
+      └─ ProcedureFunctionCall('writeln') → predefined, tab_index:35
+         └─ target 'total' → tab_index:34, type:integer, lev:0
