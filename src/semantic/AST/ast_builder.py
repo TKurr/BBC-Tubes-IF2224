@@ -89,12 +89,17 @@ class ASTBuilder:
         while i < len(node.child):
             c = node.child[i]
 
+            # Skip identifier pertama yang sudah diambil
+            if isinstance(c, Token) and c.value == base_token.value and i == 0:
+                 pass
+
             # DOT -> akses field
-            if isinstance(c, Token) and c.type == "DOT":
-                i += 1
-                field_token = node.child[i] if i < len(node.child) else None
-                if field_token and isinstance(field_token, Token) and field_token.type == "IDENTIFIER":
-                    current_node = RecordFieldNode(field_token.value, current_node)
+            elif isinstance(c, Token) and c.type == "DOT":
+                next_child = node.child[i] if i < len(node.child) else None
+                if next_child and isinstance(next_child, Token) and next_child.type == "IDENTIFIER":
+                    current_node = RecordFieldNode(next_child.value, current_node)
+                    i += 1
+
 
             # <variable-index> -> akses array
             elif getattr(c, "type", None) == "<variable-index>":

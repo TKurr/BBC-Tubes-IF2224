@@ -71,11 +71,15 @@ class AssignNode(ASTNode):
         self.children.extend([target, value])
 
     def __repr__(self):
-        # buat VarNode (ambil nama)
-        t_str = self.target.name if hasattr(self.target, 'name') else "target"
+        t_str = getattr(self.target, 'name', 'target')
 
-        # buat NumNode (ambil value)
-        v_str = self.value.value if hasattr(self.value, 'value') else "expr"
+        # Cek value, kalau angka/string ambil nilainya, kalau expression tulis 'expr'
+        if hasattr(self.value, 'value'):
+            v_str = self.value.value
+        elif hasattr(self.value, 'name'):
+            v_str = self.value.name
+        else:
+            v_str = "expr"
 
         return f"Assign('{t_str}' := {v_str})"
 
@@ -261,7 +265,7 @@ class ArrayTypeNode(ASTNode):
 class ArrayAccessNode(ASTNode):
     def __init__(self, array, index):
         super().__init__()
-        self.array = array 
+        self.array = array
         self.index = index
         self.children.extend([array, index])
 
@@ -302,9 +306,9 @@ class RecordTypeNode(ASTNode):
 class RangeTypeNode(ASTNode):
     def __init__(self, lower, upper):
         super().__init__()
-        self.lower = lower  
-        self.upper = upper  
-        self.children.extend([lower, upper])  
+        self.lower = lower
+        self.upper = upper
+        self.children.extend([lower, upper])
 
     def __repr__(self):
         lval = self.lower.value if hasattr(self.lower, 'value') else self.lower
