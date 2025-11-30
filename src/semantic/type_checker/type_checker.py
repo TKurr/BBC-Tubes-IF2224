@@ -15,8 +15,12 @@ class TypeChecker:
             TypeKind.CHAR: "char",
             TypeKind.ARRAY: "array",
             TypeKind.RECORD: "record",
+            TypeKind.STRING: "string",
             TypeKind.NOTYPE: "notype"
         }
+        
+        # Import string handler secara lazy untuk backward compatibility
+        self._string_handler = None
 
     def get_field_type(self, record_type, field_name, line=None, column=None):
         if isinstance(record_type, dict) and record_type.get('kind') == TypeKind.RECORD:
@@ -32,6 +36,18 @@ class TypeChecker:
     def get_type_name(self, type_kind):
         """Ubah TypeKind menjadi string yang mudah dibaca"""
         return self.type_names.get(type_kind, f"unknown({type_kind})")
+    
+    @property
+    def string_handler(self):
+        """Lazy loading string handler untuk backward compatibility"""
+        if self._string_handler is None:
+            from ..string_handler import StringHandler
+            self._string_handler = StringHandler()
+        return self._string_handler
+    
+    def is_string_type(self, type_kind):
+        """Periksa apakah tipe adalah string atau char"""
+        return type_kind in [TypeKind.STRING, TypeKind.CHAR]
     
     def is_numeric_type(self, type_kind):
         """Periksa apakah tipe bersifat numerik (integer atau real)"""
@@ -51,10 +67,19 @@ class TypeChecker:
         if type1 == TypeKind.REAL and type2 == TypeKind.INTEGER:
             return True
         
+        # String dan char kompatibel (char dapat dipromosikan ke string)
+        if type1 == TypeKind.STRING and type2 == TypeKind.CHAR:
+            return True
+        
         return False
     
     def check_arithmetic_operation(self, op, left_type, right_type, line=None, column=None):
         """Periksa apakah operasi aritmetika valid untuk tipe yang diberikan. Mengembalikan tipe hasil operasi."""
+        # Khusus untuk operator + : bisa konkatenasi string
+        if op == '+' and (self.is_string_type(left_type) or self.is_string_type(right_type)):
+            # Delegasikan ke string handler
+            return self.string_handler.check_string_operation(op, left_type, right_type, line, column)
+        
         # Kedua operand harus numerik
         if not self.is_numeric_type(left_type):
             raise InvalidOperationError(
@@ -90,6 +115,10 @@ class TypeChecker:
     
     def check_relational_operation(self, op, left_type, right_type, line=None, column=None):
         """Periksa apakah operasi relasional valid untuk tipe yang diberikan. Mengembalikan tipe boolean."""
+        # Perbandingan string
+        if self.is_string_type(left_type) and self.is_string_type(right_type):
+            return self.string_handler.check_string_operation(op, left_type, right_type, line, column)
+        
         # Operator equality bekerja pada tipe apa pun (asal sama)
         if op in ['=', '<>']:
             if left_type != right_type:

@@ -22,6 +22,8 @@ class SemanticAnalyzer:
             'writeln', 'write', 'readln', 'read',
             'tulis', 'baca',
         }
+        
+        self._string_handler = None
 
     def analyze(self, ast_root):
         try:
@@ -562,13 +564,23 @@ class SemanticAnalyzer:
 
     def visit_StringNode(self, node):
         """Kunjungi literal string"""
-        # String satu karakter bertipe char
-        if len(node.value) == 1:
+        # Cek literal char dari lexer/AST builder
+        if getattr(node, 'is_char_literal', False):
             node.attr['type'] = TypeKind.CHAR
             return TypeKind.CHAR
-        # String diperlakukan sebagai array char (disederhanakan)
-        node.attr['type'] = TypeKind.CHAR
-        return TypeKind.CHAR
+
+        literal_value = node.value if isinstance(node.value, str) else ''
+        stripped_value = literal_value
+
+        if len(literal_value) >= 2 and literal_value[0] == "'" and literal_value[-1] == "'":
+            stripped_value = literal_value[1:-1]
+
+        if len(stripped_value) == 1:
+            node.attr['type'] = TypeKind.CHAR
+            return TypeKind.CHAR
+
+        node.attr['type'] = TypeKind.STRING
+        return TypeKind.STRING
 
     def visit_BooleanNode(self, node):
         """Kunjungi literal boolean"""
@@ -583,6 +595,7 @@ class SemanticAnalyzer:
             'real': TypeKind.REAL,
             'boolean': TypeKind.BOOLEAN,
             'char': TypeKind.CHAR,
+            'string': TypeKind.STRING,
             'array': TypeKind.ARRAY,
             'larik': TypeKind.ARRAY,
             'record': TypeKind.RECORD,

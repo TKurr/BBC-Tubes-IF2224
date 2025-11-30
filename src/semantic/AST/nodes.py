@@ -100,9 +100,10 @@ class NumNode(ASTNode):
         return f"value {self.value}"
 
 class StringNode(ASTNode):
-    def __init__(self, value):
+    def __init__(self, value, is_char_literal=False):
         super().__init__()
         self.value = value
+        self.is_char_literal = is_char_literal
 
     def __repr__(self):
         return f"String ({self.value})"

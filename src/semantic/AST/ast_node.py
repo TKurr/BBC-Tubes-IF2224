@@ -34,7 +34,9 @@ class ASTNode:
         type_map = {
             TypeKind.NOTYPE: "void", TypeKind.INTEGER: "integer",
             TypeKind.REAL: "real", TypeKind.BOOLEAN: "boolean",
-            TypeKind.CHAR: "char", "predefined": "predefined"
+            TypeKind.CHAR: "char", TypeKind.STRING: "string",
+            TypeKind.ARRAY: "array", TypeKind.RECORD: "record",
+            "predefined": "predefined"
         }
 
         if self.attr.get('type') == 'predefined': parts.append("predefined")

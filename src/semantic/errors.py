@@ -99,3 +99,15 @@ class MissingReturnError(SemanticError):
     def __init__(self, function_name, line=None, column=None):
         message = f"Function '{function_name}' must assign a value to its name"
         super().__init__(message, line, column)
+
+class StringOperationError(SemanticError):
+# Dilempar ketika operasi string tidak valid
+    def __init__(self, operation, message, line=None, column=None):
+        full_message = f"Invalid string operation '{operation}': {message}"
+        super().__init__(full_message, line, column)
+
+class InvalidStringIndexError(SemanticError):
+# Dilempar ketika indeks akses string bukan integer
+    def __init__(self, actual_type, line=None, column=None):
+        message = f"String index must be integer, got {actual_type}"
+        super().__init__(message, line, column)

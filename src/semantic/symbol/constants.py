@@ -27,4 +27,5 @@ class TypeKind:
     CHAR    = 4
     ARRAY   = 5
     RECORD  = 6
+    STRING  = 7
 

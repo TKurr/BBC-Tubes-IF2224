@@ -64,7 +64,7 @@ class ASTBuilder:
         if token.type == "NUMBER":
             return NumNode(token.value)
         elif token.type in ["STRING_LITERAL", "CHAR_LITERAL"]:
-            return StringNode(token.value)
+            return StringNode(token.value, is_char_literal=(token.type == "CHAR_LITERAL"))
         elif token.type == "IDENTIFIER":
             return VarNode(token.value)
         return None
@@ -75,7 +75,7 @@ class ASTBuilder:
 
     def build_string_node(self, node):
         token = next((t for t in node.child if isinstance(t, Token)), None)
-        return StringNode(token.value) if token else None
+        return StringNode(token.value, is_char_literal=(token.type == "CHAR_LITERAL")) if token else None
 
     def build_variable_node(self, node):
         base_token = next((t for t in node.child if isinstance(t, Token) and t.type == "IDENTIFIER"), None)
