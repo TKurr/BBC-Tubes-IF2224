@@ -210,6 +210,26 @@ class SymbolTable:
 
         return new_id_idx
 
+    def add_type(self, name: str, type_kind: int):
+        current_btab_idx = self.display[self.current_level]
+        current_block = self.btab[current_btab_idx]
+        link_idx = current_block["last"]
+
+        new_entry = {
+            "name": name,
+            "link": link_idx,
+            "obj": ObjKind.TYPE,
+            "type": type_kind,
+            "ref": 0,
+            "nrm": 1,
+            "lev": self.current_level,
+            "adr": 0
+        }
+        self.tab.append(new_entry)
+        new_id_idx = len(self.tab) - 1
+        current_block["last"] = new_id_idx
+        return new_id_idx
+
     # Lookup
     def lookup(self, name: str) -> Optional[Dict]:
         for level in range(self.current_level, -1, -1):
@@ -240,26 +260,6 @@ class SymbolTable:
             current_id_idx = entry["link"]
 
         return None
-
-    def add_type(self, name: str, type_kind: int):
-        current_btab_idx = self.display[self.current_level]
-        current_block = self.btab[current_btab_idx]
-        link_idx = current_block["last"]
-
-        new_entry = {
-            "name": name,
-            "link": link_idx,
-            "obj": ObjKind.TYPE,
-            "type": type_kind,
-            "ref": 0,
-            "nrm": 1,
-            "lev": self.current_level,
-            "adr": 0
-        }
-        self.tab.append(new_entry)
-        new_id_idx = len(self.tab) - 1
-        current_block["last"] = new_id_idx
-        return new_id_idx
 
     def get_parameters(self, symbol: Dict) -> List[Dict]:
         if symbol['obj'] not in [ObjKind.PROCEDURE, ObjKind.FUNCTION]:
