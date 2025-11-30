@@ -12,7 +12,7 @@
 
 **Kelompok**: BBC
 **Mata Kuliah**: IF2224 Teori Bahasa Formal dan Otomata  
-**Milestone**: 2 - Syntax Analyzer / Parser
+**Milestone**: 3 - Semantic Analyzer
 
 **Anggota Kelompok**:
 
@@ -31,7 +31,11 @@ Pascal-S Lexical Analyzer adalah program yang melakukan **analisis leksikal** (l
 Pascal-S Syntax Analyzer adalah program yang melakukan analisis sintaks (syntax analysis) pada source code Pascal-S untuk memastikan bahwa susunan token mengikuti aturan grammar Pascal-S. Program ini menerima token hasil lexical analyzer dan membangunnya menjadi sebuah parse tree menggunakan metode Recursive Descent Parsing.
 
 ### Milestone-3
-Pascal-S Semantic Analyzer adalah program yang melakukan analisis semantik (semantic analysis) pada source code Pascal-S untuk mengecek kebenaran makna pada pohon sintaks.
+Pascal-S Semantic Analyzer adalah program yang melakukan **analisis semantik** (semantic analysis) pada source code Pascal-S untuk mengecek kebenaran makna pada pohon sintaks (AST). Program ini memvalidasi aturan semantik seperti:
+- Deklarasi dan penggunaan identifier (variabel, konstanta, fungsi, prosedur)
+- Kompatibilitas tipe data dalam operasi dan assignment
+- Scope dan visibility identifier
+- Jumlah dan tipe parameter pada pemanggilan fungsi/prosedur
 
 ### Fitur:
 #### Milestone-1
@@ -39,11 +43,28 @@ Pascal-S Semantic Analyzer adalah program yang melakukan analisis semantik (sema
 -   Menggunakan DFA yang dikonfigurasi melalui file JSON
 -   Error handling dengan informasi lokasi (line dan column)
 
-### Milestone-2
+#### Milestone-2
 - Menganalisis struktur program Pascal-S berdasarkan grammar pada spesifikasi
 - Membangun parse tree lengkap yang merepresentasikan struktur sintaks
 - Memvalidasi setiap konstruksi sintaksis, memastikan token membentuk struktur yang benar (misalnya: urutan deklarasi, bentuk ekspresi, tipe statement, dan aturan prioritas operator)
 - Error handling detail dengan informasi lokasi (line dan column) menggunakan ParseError
+
+#### Milestone-3
+- Implementasi TAB (Identifier Table), BTAB (Block Table), dan ATAB (Array Table) untuk manajemen identifier
+- Validasi tipe data untuk operasi aritmetika, relasional, logika, dan assignment
+- Pengelolaan nested scope untuk prosedur/fungsi dengan display vector
+- Deteksi error seperti:
+  - Undeclared/redeclared identifier
+  - Type mismatch dalam operasi dan assignment
+  - Invalid array index (non-integer)
+  - Argument count/type mismatch pada pemanggilan fungsi/prosedur
+  - Assignment ke konstanta
+- Tipe Data yang Dikenali:
+  - Tipe primitif: `integer`, `real`, `boolean`, `char`, `string`
+  - Tipe kompleks: `array`, `record`
+  - Kompatibilitas tipe (integer dan real, char dan string)
+- Menambahkan atribut semantik (tipe, level, index tabel) pada node AST
+
 ---
 
 ## Requirements
@@ -71,11 +92,15 @@ python main.py {path/to/input.pas}
 ### Contoh:
 
 ```bash
-python main.py milestone-1/input-1.pas
+python main.py milestone-1/input/input-1.pas
 ```
 atau
 ```bash
-python main.py milestone-2/input-1.pas
+python main.py milestone-2/input/input-1.pas
+```
+atau
+```bash
+python main.py milestone-3/input/input-1.pas
 ```
 
 ### Contoh Input (`program.pas`):
@@ -117,7 +142,8 @@ SEMICOLON(;)
 KEYWORD(end)
 DOT(.)
 ```
-Milestone-2
+
+#### Milestone-2
 ```
 <program>
 ├── <program-header>
@@ -185,6 +211,52 @@ Milestone-2
 └── DOT(.)
 ```
 
+#### Milestone-3
+```
+============================= SEMANTIC ANALYSIS + SYMBOL TABLE =============================
+
+
+TAB (Identifier Table)
+
+Idx  Name         Link  Obj        Type  Ref   Nrm  Lev  Adr  
+--------------------------------------------------
+...  (reserved words 0-28)
+29   Hello        0     program    0     0     1    0    0    
+30   a            0     variable   1     0     1    0    0    
+31   b            30    variable   1     0     1    0    1    
+32   writeln      0     procedure  0     0     1    0    0    
+
+BTAB (Block Table)
+
+Idx  Last  Lpar  Psze  Vsze 
+--------------------------------------------------
+0    31    0     0     2    
+1    0     0     0     0    
+
+ATAB (Array Table)
+(kosong karena tidak ada array)
+
+================================= DECORATED AST =================================
+
+└─ ProgramNode(name: 'Hello') → tab_index:29, type:void, lev:0
+   ├─ Declarations
+   │  ├─ VarDecl('a') → tab_index:30, type:integer, lev:0
+   │  └─ VarDecl('b') → tab_index:31, type:integer, lev:0
+   └─ Block → block_index:1, lev:1
+      ├─ Assign('a' := 5) → type:void
+      │  ├─ target 'a' → tab_index:30, type:integer, lev:0
+      │  └─ value 5 → type:integer
+      ├─ Assign('b' := expr) → type:void
+      │  ├─ target 'b' → tab_index:31, type:integer, lev:0
+      │  └─ BinOp '+' → type:integer
+      │     ├─ target 'a' → tab_index:30, type:integer, lev:0
+      │     └─ value 10 → type:integer
+      └─ ProcedureFunctionCall('writeln') → predefined, tab_index:32
+         ├─ String ('Result = ') → type:string
+         └─ target 'b' → tab_index:31, type:integer, lev:0
+
+```
+
 ## Pembagian Tugas
 ### Milestone-1
 | Nama                  | NIM      | Tugas                                       | Kontribusi |
@@ -201,6 +273,14 @@ Milestone-2
 | Jovandra Otniel P. S. | 13523141 | Parse identifier , array, range, statement, statement_list                                                | 25%        |
 | Andrew Tedjapratama   | 13523148 | Parse Node, init Recursive Descent, Parse Variable, Parse type & type-definition, parse statement detail  | 25%        |
 | Theo Kurniady         | 13523154 | Parse declarations, parameter,  variable-index, rekaman, & kasus                                          | 25%        |
+
+### Milestone-3
+| Nama                  | NIM      | Tugas                                                                                                     | Kontribusi |
+| --------------------- | -------- | --------------------------------------------------------------------------------------------------------- | ---------- |
+| Brian Ricardo Tamin   | 13523126 | Implementasi Symbol Table (TAB, BTAB, ATAB), scope management, AST decoration                             | 25%        |
+| Jovandra Otniel P. S. | 13523141 | Type checker, semantic analyzer untuk statements dan expressions                                          | 25%        |
+| Andrew Tedjapratama   | 13523148 | Semantic error classes, AST builder integration, testing dan debugging                                    | 25%        |
+| Theo Kurniady         | 13523154 | Semantic analyzer untuk declarations, function/procedure calls, laporan                                   | 25%        |
 
 <div align="center">
    <img width=100% src="https://capsule-render.vercel.app/api?type=waving&height=120&color=0:282C34,25:181921,75:313642,100:1e3a8a&section=footer" />
