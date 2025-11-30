@@ -35,7 +35,7 @@ Idx  Xtyp  Etyp  Eref  Low   High  Elsz  Size
    │  │     ├─ RecordField('x')
    │  │     └─ RecordField('y')
    │  ├─ VarDecl('p') → tab_index:31, type:{'kind': 6, 'fields': {'x': 1, 'y': 1}}, lev:0
-   │  ├─ VarDecl('matrix') → tab_index:32, type:5, lev:0
+   │  ├─ VarDecl('matrix') → tab_index:32, type:array, lev:0
    │  │  └─ ArrayType(base_type=integer, bounds=[(value 1, value 5)])
    │  ├─ VarDecl('i') → tab_index:33, type:integer, lev:0
    │  └─ VarDecl('total') → tab_index:34, type:integer, lev:0

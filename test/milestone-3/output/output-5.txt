@@ -42,7 +42,7 @@ Idx  Xtyp  Etyp  Eref  Low   High  Elsz  Size
    │  ├─ VarDecl('r') → tab_index:32, type:real, lev:0
    │  ├─ VarDecl('ch') → tab_index:33, type:char, lev:0
    │  ├─ VarDecl('ok') → tab_index:34, type:boolean, lev:0
-   │  ├─ VarDecl('arr') → tab_index:35, type:5, lev:0
+   │  ├─ VarDecl('arr') → tab_index:35, type:array, lev:0
    │  │  └─ ArrayType(base_type=integer, bounds=[(value 1, value 10)])
    │  ├─ ProcedureDecl(name='IncVar')
    │  │  ├─ Param(names='z', type='integer', is_var=False)
@@ -98,7 +98,7 @@ Idx  Xtyp  Etyp  Eref  Low   High  Elsz  Size
       │        ├─ target 'arr'
       │        └─ value 1 → type:integer
       └─ ProcedureFunctionCall('writeln') → predefined, tab_index:40
-         ├─ String ('Value: ') → type:char
+         ├─ String ('Value: ') → type:string
          ├─ Array Variable(array=arr, index=1)
          │  ├─ target 'arr'
          │  └─ value 1 → type:integer

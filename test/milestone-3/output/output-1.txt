@@ -37,5 +37,5 @@ ATAB (Array Table)
       │     ├─ target 'a' → tab_index:30, type:integer, lev:0
       │     └─ value 10 → type:integer
       └─ ProcedureFunctionCall('writeln') → predefined, tab_index:32
-         ├─ String ('Result = ') → type:char
+         ├─ String ('Result = ') → type:string
          └─ target 'b' → tab_index:31, type:integer, lev:0

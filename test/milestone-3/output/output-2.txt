@@ -33,7 +33,7 @@ Idx  Xtyp  Etyp  Eref  Low   High  Elsz  Size
    │  ├─ VarDecl('a') → tab_index:30, type:integer, lev:0
    │  ├─ VarDecl('b') → tab_index:31, type:integer, lev:0
    │  ├─ VarDecl('i') → tab_index:32, type:integer, lev:0
-   │  └─ VarDecl('arr') → tab_index:33, type:5, lev:0
+   │  └─ VarDecl('arr') → tab_index:33, type:array, lev:0
    │     └─ ArrayType(base_type=integer, bounds=[(value 1, value 5)])
    └─ Block → block_index:1, lev:1
       ├─ Assign('a' := 5) → type:void
@@ -45,7 +45,7 @@ Idx  Xtyp  Etyp  Eref  Low   High  Elsz  Size
       │     ├─ target 'a' → tab_index:30, type:integer, lev:0
       │     └─ value 10 → type:integer
       ├─ ProcedureFunctionCall('writeln') → predefined, tab_index:34
-      │  ├─ String ('Result = ') → type:char
+      │  ├─ String ('Result = ') → type:string
       │  └─ target 'b' → tab_index:31, type:integer, lev:0
       └─ For Loop
          ├─ target 'i'

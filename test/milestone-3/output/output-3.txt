@@ -28,7 +28,7 @@ Idx  Xtyp  Etyp  Eref  Low   High  Elsz  Size
 └─ ProgramNode(name: 'RangesLoops') → tab_index:29, type:void, lev:0
    ├─ Declarations
    │  ├─ VarDecl('i') → tab_index:30, type:integer, lev:0
-   │  └─ VarDecl('a') → tab_index:31, type:5, lev:0
+   │  └─ VarDecl('a') → tab_index:31, type:array, lev:0
    │     └─ ArrayType(base_type=integer, bounds=[(value 0, value 3)])
    └─ Block → block_index:1, lev:1
       ├─ Assign('target' := 1) → type:void
@@ -83,7 +83,7 @@ Idx  Xtyp  Etyp  Eref  Low   High  Elsz  Size
       │        ├─ target 'i' → tab_index:30, type:integer, lev:0
       │        └─ value 1 → type:integer
       └─ ProcedureFunctionCall('writeln') → predefined, tab_index:32
-         ├─ String ('ok') → type:char
+         ├─ String ('ok') → type:string
          └─ Array Variable(array=a, index=1)
             ├─ target 'a'
             └─ value 1 → type:integer
