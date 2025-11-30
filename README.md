@@ -30,6 +30,9 @@ Pascal-S Lexical Analyzer adalah program yang melakukan **analisis leksikal** (l
 ### Milestone-2
 Pascal-S Syntax Analyzer adalah program yang melakukan analisis sintaks (syntax analysis) pada source code Pascal-S untuk memastikan bahwa susunan token mengikuti aturan grammar Pascal-S. Program ini menerima token hasil lexical analyzer dan membangunnya menjadi sebuah parse tree menggunakan metode Recursive Descent Parsing.
 
+### Milestone-3
+Pascal-S Semantic Analyzer adalah program yang melakukan analisis semantik (semantic analysis) pada source code Pascal-S untuk mengecek kebenaran makna pada pohon sintaks.
+
 ### Fitur:
 #### Milestone-1
 -   Mengenali 20 jenis token sesuai spesifikasi Pascal-S
