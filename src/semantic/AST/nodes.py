@@ -286,10 +286,12 @@ class ArrayAccessNode(ASTNode):
 
 
 class RecordFieldNode(ASTNode):
-    def __init__(self, name, type_):
+    def __init__(self, name, type_, parent=None):
         super().__init__()
         self.name = name
         self.type_ = type_
+        self.parent = parent 
+        self.children.append(parent)
 
     def __repr__(self):
         return f"RecordField('{self.name}')"

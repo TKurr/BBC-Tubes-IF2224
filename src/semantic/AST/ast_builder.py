@@ -98,7 +98,7 @@ class ASTBuilder:
                 if i < len(node.child):
                     next_child = node.child[i]
                     if isinstance(next_child, Token) and next_child.type == "IDENTIFIER":
-                        current_node = RecordFieldNode(next_child.value, current_node)
+                        current_node = RecordFieldNode(next_child.value, type_=None, parent=current_node)
 
             # Array access -> [index]
             elif getattr(c, "type", None) == "<variable-index>":
@@ -308,7 +308,7 @@ class ASTBuilder:
                 i += 1
                 field_token = node.child[i] if i < len(node.child) else None
                 if field_token and isinstance(field_token, Token) and field_token.type == "IDENTIFIER":
-                    current_node = RecordFieldNode(field_token.value, current_node)
+                    current_node = RecordFieldNode(next_child.value, type_=None, parent=current_node)
             i += 1
 
         return current_node
