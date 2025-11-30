@@ -83,25 +83,24 @@ class ASTBuilder:
             return None
 
         current_node = VarNode(base_token.value)
-
-        # Traversal child untuk field atau array index
         i = 0
         while i < len(node.child):
             c = node.child[i]
 
-            # Skip identifier pertama yang sudah diambil
+            # Lewati identifier pertama
             if isinstance(c, Token) and c.value == base_token.value and i == 0:
-                 pass
+                i += 1
+                continue
 
-            # DOT -> akses field
+            # DOT access -> field
             elif isinstance(c, Token) and c.type == "DOT":
-                next_child = node.child[i] if i < len(node.child) else None
-                if next_child and isinstance(next_child, Token) and next_child.type == "IDENTIFIER":
-                    current_node = RecordFieldNode(next_child.value, current_node)
-                    i += 1
+                i += 1  # pindah ke IDENTIFIER berikutnya
+                if i < len(node.child):
+                    next_child = node.child[i]
+                    if isinstance(next_child, Token) and next_child.type == "IDENTIFIER":
+                        current_node = RecordFieldNode(next_child.value, current_node)
 
-
-            # <variable-index> -> akses array
+            # Array access -> [index]
             elif getattr(c, "type", None) == "<variable-index>":
                 expr_node = next((self.build_node(x) for x in c.child if getattr(x, "type", None) == "<expression>"), None)
                 if expr_node:
@@ -110,6 +109,7 @@ class ASTBuilder:
             i += 1
 
         return current_node
+
 
     # ---------------------------
     # Helper for building lists
